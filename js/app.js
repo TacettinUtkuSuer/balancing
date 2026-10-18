@@ -148,17 +148,6 @@
           <label class="field"><span>Balans kalite sınıfı <span class="unit">G [mm/s]</span></span>${numInput('data-f="global.G" min="0" list="gGrades"', g.G)}</label>
         </div>
       </section>
-      <section class="card span-all">
-        <div class="card-h"><h2>Şema</h2><span class="hint">Tüm parçalar, balans noktaları ve yataklar · CG = toplam kütle merkezi</span></div>
-        <div class="card-b"><div class="schem-box" data-live="def-schematic">${S.toSVG(S.build(state, { h: 230 }))}</div></div>
-      </section>
-      <section class="card">
-        <div class="card-h"><h2>Parçalar</h2><button type="button" class="btn small" data-action="add-part">+ Parça ekle</button></div>
-        <div class="card-b">
-          ${state.parts.length ? "" : `<p class="hint">Henüz parça yok. Şaftı istediğiniz kadar parçaya ayırın.</p>`}
-          ${state.parts.map(renderPart).join("")}
-        </div>
-      </section>
       <section class="card">
         <div class="card-h"><h2>Yatak bölgeleri</h2><button type="button" class="btn small" data-action="add-bearing">+ Yatak ekle</button></div>
         <div class="card-b">
@@ -175,6 +164,17 @@
           <p class="hint">Koordinatlar ortak eksenel referansa göre (mm). Her proseste 2 yatak seçilir.</p>
         </div>
       </section>
+      <section class="card span-all">
+        <div class="card-h"><h2>Şema</h2><span class="hint">Tüm parçalar, balans noktaları ve yataklar · CG = toplam kütle merkezi</span></div>
+        <div class="card-b"><div class="schem-box" data-live="def-schematic">${S.toSVG(S.build(state, { h: 230 }))}</div></div>
+      </section>
+      <section class="card span-all">
+        <div class="card-h"><h2>Parçalar</h2><button type="button" class="btn small" data-action="add-part">+ Parça ekle</button></div>
+        <div class="card-b">
+          ${state.parts.length ? "" : `<p class="hint">Henüz parça yok. Şaftı istediğiniz kadar parçaya ayırın.</p>`}
+          ${state.parts.map(renderPart).join("")}
+        </div>
+      </section>
     </div>${gList}`;
   }
 
@@ -187,13 +187,13 @@
         <button type="button" class="btn icon danger" data-action="del-part" data-id="${p.id}" title="Parçayı sil">✕</button>
       </div>
       <div class="pt-list">
-        ${p.points.length ? `<div class="list-h pt-row"><span>Balans noktası</span><span>x [mm]</span><span>r [mm]</span><span></span></div>` : ""}
+        ${p.points.length ? `<div class="list-h pt-row"><span>Balans noktası</span><span class="m-hide">x [mm]</span><span class="m-hide">r [mm]</span><span class="m-hide"></span></div>` : ""}
         ${p.points
           .map(
             (pt) => `<div class="pt-row">
               <input class="cell" data-point="${pt.id}" data-part="${p.id}" data-k="name" value="${esc(pt.name)}" aria-label="Nokta adı" />
-              ${numInput(`class="cell" data-point="${pt.id}" data-part="${p.id}" data-k="x" aria-label="Nokta x"`, pt.x)}
-              ${numInput(`class="cell" data-point="${pt.id}" data-part="${p.id}" data-k="r" min="0" aria-label="Nokta r"`, pt.r)}
+              <label class="field"><span class="m-lbl">x [mm]</span>${numInput(`class="cell" data-point="${pt.id}" data-part="${p.id}" data-k="x" aria-label="Nokta x"`, pt.x)}</label>
+              <label class="field"><span class="m-lbl">r [mm]</span>${numInput(`class="cell" data-point="${pt.id}" data-part="${p.id}" data-k="r" min="0" aria-label="Nokta r"`, pt.r)}</label>
               <button type="button" class="btn icon danger" data-action="del-point" data-part="${p.id}" data-id="${pt.id}" title="Noktayı sil">✕</button>
             </div>`
           )
