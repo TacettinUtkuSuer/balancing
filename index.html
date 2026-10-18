@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kademeli Şaft Balans Hesabı</title>
+  <meta name="description" content="ISO 21940-11'e göre kademeli şaft/rotor balans toleransı hesabı, otomatik rotor tipi tespiti ve tek sayfalık PDF raporu. Tamamen tarayıcıda çalışır." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='2' y='14' width='28' height='4' rx='2' fill='%238796a8'/%3E%3Crect x='8' y='6' width='5' height='20' rx='2' fill='%231e88e5'/%3E%3Crect x='19' y='6' width='5' height='20' rx='2' fill='%231e88e5'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <svg viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><rect x="2" y="14" width="28" height="4" rx="2" fill="#8796a8"/><rect x="8" y="6" width="5" height="20" rx="2" fill="#1e88e5"/><rect x="19" y="6" width="5" height="20" rx="2" fill="#1e88e5"/></svg>
+      <div>
+        <h1>Kademeli Şaft Balans Hesabı</h1>
+        <p class="sub">ISO 21940-11 · g·mm &amp; gram tolerans · otomatik rotor tipi</p>
+      </div>
+    </div>
+    <div class="actions">
+      <button type="button" class="btn ghost" data-action="new">Yeni</button>
+      <button type="button" class="btn ghost" data-action="example">Örnek yükle</button>
+      <label class="btn ghost file-btn">JSON içe aktar<input type="file" accept=".json,application/json" id="importFile" hidden /></label>
+      <button type="button" class="btn" data-action="export">JSON dışa aktar</button>
+      <button type="button" class="btn primary" data-action="pdf-all">Tüm raporlar (PDF)</button>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button type="button" role="tab" data-tab="processes">Balans Prosesleri</button>
+    <button type="button" role="tab" data-tab="definition">Rotor Tanımı</button>
+  </nav>
+
+  <main id="app"></main>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="js/vendor/jspdf.umd.min.js"></script>
+  <script src="js/vendor/fonts.js"></script>
+  <script src="js/type-images.js"></script>
+  <script src="js/calc.js"></script>
+  <script src="js/schematic.js"></script>
+  <script src="js/report.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,178 @@
+{
+  "schema": "shaft-balance/v1",
+  "meta": {
+    "orderNo": "00001",
+    "rotorId": "POMPA ROTORU 1",
+    "rotorModel": "ANOVA",
+    "operator": "",
+    "direction": "İleri",
+    "notes": "Örnek: 3 kademeli montaj balansı"
+  },
+  "global": {
+    "serviceSpeed": 7200,
+    "balanceSpeed": 2000,
+    "G": 1.6
+  },
+  "parts": [
+    {
+      "id": "p-gobek",
+      "name": "Göbek",
+      "mass": 500,
+      "x": 40,
+      "points": [
+        {
+          "id": "pt-g1",
+          "name": "G-ön",
+          "x": 23,
+          "r": 20
+        }
+      ]
+    },
+    {
+      "id": "p-saft",
+      "name": "Şaft",
+      "mass": 315,
+      "x": 67.5,
+      "points": [
+        {
+          "id": "pt-s1",
+          "name": "Ş-orta",
+          "x": 67.5,
+          "r": 8
+        }
+      ]
+    },
+    {
+      "id": "p-cark",
+      "name": "Çark",
+      "mass": 500,
+      "x": 95,
+      "points": [
+        {
+          "id": "pt-c1",
+          "name": "Ç-arka",
+          "x": 103.5,
+          "r": 20
+        },
+        {
+          "id": "pt-c2",
+          "name": "Ç-dış",
+          "x": 160,
+          "r": 30
+        }
+      ]
+    }
+  ],
+  "bearings": [
+    {
+      "id": "b-a",
+      "name": "Yatak A",
+      "x": 0
+    },
+    {
+      "id": "b-b",
+      "name": "Yatak B",
+      "x": 135
+    },
+    {
+      "id": "b-b2",
+      "name": "Yatak B'",
+      "x": 120
+    }
+  ],
+  "processes": [
+    {
+      "id": "pr-1",
+      "name": "Adım 1 – Çıplak şaft",
+      "partIds": [
+        "p-saft"
+      ],
+      "bearingIds": [
+        "b-a",
+        "b-b"
+      ],
+      "planes": 1,
+      "pointIds": [
+        "pt-s1"
+      ],
+      "overrides": {
+        "serviceSpeed": null,
+        "balanceSpeed": null,
+        "G": 2.5
+      }
+    },
+    {
+      "id": "pr-2",
+      "name": "Adım 2 – Şaft + Göbek",
+      "partIds": [
+        "p-saft",
+        "p-gobek"
+      ],
+      "bearingIds": [
+        "b-a",
+        "b-b"
+      ],
+      "planes": 2,
+      "pointIds": [
+        "pt-g1",
+        "pt-s1"
+      ],
+      "overrides": {
+        "serviceSpeed": null,
+        "balanceSpeed": null,
+        "G": null
+      }
+    },
+    {
+      "id": "pr-3",
+      "name": "Adım 3 – Komple rotor",
+      "partIds": [
+        "p-saft",
+        "p-gobek",
+        "p-cark"
+      ],
+      "bearingIds": [
+        "b-a",
+        "b-b"
+      ],
+      "planes": 2,
+      "pointIds": [
+        "pt-g1",
+        "pt-c1"
+      ],
+      "overrides": {
+        "serviceSpeed": null,
+        "balanceSpeed": null,
+        "G": null
+      }
+    },
+    {
+      "id": "pr-4",
+      "name": "Adım 4 – Çark dış düzlem",
+      "partIds": [
+        "p-saft",
+        "p-gobek",
+        "p-cark"
+      ],
+      "bearingIds": [
+        "b-a",
+        "b-b2"
+      ],
+      "planes": 2,
+      "pointIds": [
+        "pt-g1",
+        "pt-c2"
+      ],
+      "overrides": {
+        "serviceSpeed": null,
+        "balanceSpeed": 1500,
+        "G": null
+      }
+    }
+  ],
+  "ui": {
+    "tab": "processes",
+    "activeProcessId": "pr-3",
+    "detailsOpen": true
+  }
+}
