@@ -122,14 +122,10 @@
     const leftW = 58;
     box(M, y, leftW, topH, [255, 255, 255]);
     if (r.valid) {
-      const img = root.TYPE_IMAGES[r.type.key];
+      const art = root.TypeArt.build(r.type.key);
       const iw = leftW - 4;
-      const ih = Math.min(42, (iw * img.h) / img.w);
-      try {
-        doc.addImage(img.src, "JPEG", M + 2, y + 2, iw, ih);
-      } catch (e) {
-        /* görsel eklenemezse yalnızca metin */
-      }
+      const ih = Math.min(42, (iw * art.h) / art.w);
+      S.toPDF(doc, art, M + 2, y + 2, iw, ih, font.name);
       txt(fit(r.type.name, leftW - 4, 10.5, true), M + leftW / 2, y + ih + 7, { size: 10.5, bold: true, color: ACCENT, align: "center" });
       txt(`${r.type.nameEn} · otomatik tespit`, M + leftW / 2, y + ih + 11.5, { size: 7.5, color: MUTED, align: "center" });
     } else {

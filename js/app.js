@@ -279,7 +279,6 @@
     if (!r.valid) {
       return `<div class="alert err"><b>Hesap yapılamadı:</b><ul>${r.errors.map((e) => `<li>${esc(e)}</li>`).join("")}</ul></div>${warn}${kpis}<div style="height:10px"></div>${schem}`;
     }
-    const img = window.TYPE_IMAGES[r.type.key];
     const tiles = r.planes
       .map(
         (pl, i) => `<div class="tol">
@@ -292,7 +291,7 @@
       .join("");
     return `${warn}<div class="op-panel">
         <div class="type-box">
-          <img src="${img.src}" alt="${esc(r.type.nameEn)} temsili görsel" />
+          ${S.toSVG(window.TypeArt.build(r.type.key), "type-art", `${r.type.nameEn} temsili görsel`)}
           <div>
             <div class="type-name">${esc(r.type.name)}</div>
             <div class="type-en">${esc(r.type.nameEn)} · otomatik tespit</div>
