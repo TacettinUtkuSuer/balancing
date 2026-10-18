@@ -113,7 +113,7 @@ input:focus, select:focus { outline: 2px solid var(--accent-soft); border-color:
 /* ---------- Operatör paneli ---------- */
 .op-panel { display: grid; grid-template-columns: minmax(220px, 300px) minmax(0, 1fr); gap: 16px; }
 .type-box { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: #fff; display: flex; flex-direction: column; }
-.type-box img { width: 100%; display: block; background: #fff; }
+.type-box svg.type-art { width: 100%; height: auto; display: block; background: #fff; }
 .type-box .type-name { padding: 10px 12px 4px; font-size: 18px; font-weight: 700; color: var(--accent-ink); }
 .type-box .type-en { padding: 0 12px; font-size: 12px; color: var(--muted); }
 .type-box .reason { padding: 8px 12px 12px; font-size: 12.5px; color: #34495e; }
@@ -191,7 +191,7 @@ pre.raw { max-height: 260px; overflow: auto; font-size: 11.5px; background: var(
   .proc-list { position: static; }
   .op-panel { grid-template-columns: 1fr; }
   .type-box { flex-direction: row; }
-  .type-box img { width: 40%; object-fit: contain; }
+  .type-box svg.type-art { width: 40%; flex: none; }
 }
 @media (max-width: 560px) {
   main, .topbar, .tabs { padding-left: 16px; padding-right: 16px; }
@@ -200,6 +200,6 @@ pre.raw { max-height: 260px; overflow: auto; font-size: 11.5px; background: var(
   .pt-list { padding-left: 10px; }
   .tol .big { font-size: 32px; }
   .type-box { flex-direction: column; }
-  .type-box img { width: 100%; }
+  .type-box svg.type-art { width: 100%; }
 }
 .det-grid > div { min-width: 0; overflow-x: auto; }

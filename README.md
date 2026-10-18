@@ -98,7 +98,7 @@ js/calc.js            hesap motoru (saf fonksiyonlar, Node'da da çalışır)
 js/schematic.js       şema geometrisi → SVG (ekran) ve jsPDF (rapor)
 js/report.js          1 sayfalık PDF rapor
 js/app.js             arayüz, durum, JSON içe/dışa aktarma
-js/type-images.js     temsil görselleri (assets/types/*.jpg, base64)
+js/type-art.js        rotor tipi temsil görselleri (vektörel çizim)
 js/vendor/            jsPDF 4.2.1 (MIT), Liberation Sans alt kümesi (OFL) – Türkçe karakterler için
 tests/calc.test.js    hesap motoru testleri
 ```

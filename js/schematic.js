@@ -168,13 +168,15 @@
 
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
-  function toSVG(sch) {
-    const out = [`<svg viewBox="0 0 ${sch.w} ${sch.h}" xmlns="http://www.w3.org/2000/svg" class="schematic" role="img" aria-label="Rotor şeması">`];
+  function toSVG(sch, cls = "schematic", label = "Rotor şeması") {
+    const out = [`<svg viewBox="0 0 ${sch.w} ${sch.h}" xmlns="http://www.w3.org/2000/svg" class="${cls}" role="img" aria-label="${esc(label)}">`];
     for (const s of sch.shapes) {
       const st = `stroke="${s.stroke || "none"}" stroke-width="${s.width || 0}"${s.dash ? ` stroke-dasharray="${s.dash.join(" ")}"` : ""}`;
       if (s.t === "line") out.push(`<line x1="${s.x1}" y1="${s.y1}" x2="${s.x2}" y2="${s.y2}" ${st}/>`);
       else if (s.t === "rect") out.push(`<rect x="${s.x}" y="${s.y}" width="${s.w}" height="${s.h}" rx="${s.r || 0}" fill="${s.fill || "none"}" ${st}/>`);
-      else if (s.t === "poly") out.push(`<polygon points="${s.pts.map((p) => p.join(",")).join(" ")}" fill="${s.fill || "none"}" ${st}/>`);
+      else if (s.t === "poly")
+        out.push(`<${s.open ? "polyline" : "polygon"} points="${s.pts.map((p) => p.join(",")).join(" ")}" fill="${s.open ? "none" : s.fill || "none"}" stroke-linecap="round" stroke-linejoin="round" ${st}/>`);
+      else if (s.t === "ellipse") out.push(`<ellipse cx="${s.cx}" cy="${s.cy}" rx="${s.rx}" ry="${s.ry}" fill="${s.fill || "none"}" ${st}/>`);
       else if (s.t === "circle") out.push(`<circle cx="${s.cx}" cy="${s.cy}" r="${s.r}" fill="${s.fill || "none"}" ${st}/>`);
       else if (s.t === "text")
         out.push(`<text x="${s.x}" y="${s.y}" font-size="${s.size}" text-anchor="${s.anchor || "start"}" fill="${s.fill}"${s.bold ? ' font-weight="700"' : ""}>${esc(s.s)}</text>`);
@@ -214,11 +216,19 @@
         else doc.rect(x, y, s.w * k, s.h * k, mode);
       } else if (s.t === "circle") {
         doc.circle(...P(s.cx, s.cy), s.r * k, mode);
+      } else if (s.t === "ellipse") {
+        doc.ellipse(...P(s.cx, s.cy), s.rx * k, s.ry * k, mode);
       } else if (s.t === "poly") {
         const pts = s.pts.map(([x, y]) => P(x, y));
         const rel = [];
         for (let i = 1; i < pts.length; i++) rel.push([pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]]);
-        doc.lines(rel, pts[0][0], pts[0][1], [1, 1], mode, true);
+        if (s.open) {
+          doc.setLineCap("round");
+          doc.setLineJoin("round");
+          doc.lines(rel, pts[0][0], pts[0][1], [1, 1], "S", false);
+          doc.setLineCap("butt");
+          doc.setLineJoin("miter");
+        } else doc.lines(rel, pts[0][0], pts[0][1], [1, 1], mode, true);
       } else if (s.t === "text") {
         doc.setFont(fontName, s.bold ? "bold" : "normal");
         doc.setFontSize(s.size * k * 2.835);
