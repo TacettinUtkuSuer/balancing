@@ -295,7 +295,27 @@
     return fmt(v, d);
   }
 
+  /**
+   * Kütle gösterimi: 1 g altındaki değerler otomatik olarak mg'a çevrilir.
+   * @returns {{ v: string, unit: "g" | "mg" }}
+   */
+  function massParts(g, sig = 3) {
+    if (!Number.isFinite(g)) return { v: "–", unit: "g" };
+    if (Math.abs(g) < 1) {
+      const mg = g * 1000;
+      // yuvarlama 1000 mg'a ulaşıyorsa gram olarak göster
+      if (Math.abs(+mg.toPrecision(sig)) < 1000) return { v: fmtAuto(mg, sig), unit: "mg" };
+    }
+    return { v: fmtAuto(g, sig), unit: "g" };
+  }
+  const fmtMass = (g, sig = 3) => {
+    const m = massParts(g, sig);
+    return `${m.v} ${m.unit}`;
+  };
+
   return {
+    massParts,
+    fmtMass,
     G_GRADES,
     G_GRADES_EXT,
     ROTOR_TYPES,

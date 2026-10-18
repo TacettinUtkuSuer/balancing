@@ -162,11 +162,12 @@
         box(bx, y, bw, tolH, ACCENT_BG, ACCENT, 0.6);
         txt(n === 1 ? "DÜZLEM (STATİK)" : `DÜZLEM ${i + 1}`, bx + 4, y + 5.5, { size: 8.5, bold: true, color: ACCENT });
         txt(fit(`${pl.point.name} · ${pl.part.name} · x = ${f(pl.x, 1)} mm · r = ${f(pl.r, 1)} mm`, bw - 8, 7.5), bx + 4, y + 9.5, { size: 7.5, color: MUTED });
-        txt(fa(pl.m), bx + 4, y + 22, { size: 26, bold: true });
+        const mp = C.massParts(pl.m);
+        txt(mp.v, bx + 4, y + 22, { size: 26, bold: true });
         doc.setFont(font.name, "bold");
         doc.setFontSize(26);
-        const wNum = doc.getTextWidth(T(fa(pl.m)));
-        txt("g", bx + 5.5 + wNum, y + 22, { size: 13, bold: true, color: MUTED });
+        const wNum = doc.getTextWidth(T(mp.v));
+        txt(mp.unit, bx + 5.5 + wNum, y + 22, { size: 13, bold: true, color: MUTED });
         txt(`${fa(pl.U)} g·mm`, bx + bw - 4, y + 22, { size: 14, bold: true, align: "right" });
         txt("izin verilen artık kütle", bx + 4, y + 27, { size: 6.8, color: MUTED });
         txt("izin verilen artık dengesizlik", bx + bw - 4, y + 27, { size: 6.8, color: MUTED, align: "right" });
@@ -236,7 +237,7 @@
           ["Servis hızı", `${f(pr.serviceSpeed, 0)} rpm (Ω = ${f(r.omega, 2)} rad/s)`],
           ["U_per = G·m/Ω", `${fa(r.Uper)} g·mm`],
           ["Yatak payı A / B", `${f(r.alloc.kA * 100, 0)}% / ${f(r.alloc.kB * 100, 0)}%${r.transfer.s < 0.999 ? `, s = ${f(r.transfer.s, 3)}` : ""}`],
-          ...r.planes.map((pl, i) => [`Dinamik tolerans ${r.nPlanes === 1 ? "" : i + 1}`.trim(), `${fa(pl.U)} g·mm  →  ${fa(pl.m)} g`]),
+          ...r.planes.map((pl, i) => [`Dinamik tolerans ${r.nPlanes === 1 ? "" : i + 1}`.trim(), `${fa(pl.U)} g·mm  →  ${C.fmtMass(pl.m)}`]),
         ]
       : [["Durum", "hesap yapılamadı"]];
     iso.forEach(([k, v], i) => {
