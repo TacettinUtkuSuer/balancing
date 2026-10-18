@@ -70,6 +70,8 @@ Birimler: kütle g, uzunluk mm, hız rpm, G mm/s.
      `U₁ = s·U_per,A`, `U₂ = s·U_per,B`, `s = min(1, s_A, s_B)`.
    * 1 düzlem (statik): `U = U_per`.
 5. **Doğrudan kütle:** `m_per = U / r` [g] — operatörün tezgâhta okuyacağı değer.
+   1 g'ın altındaki değerler ekranda ve raporda otomatik olarak **mg** gösterilir (örn. 0,0698 g → 69,8 mg);
+   JSON'daki `computed` değerleri her zaman gramdır.
 
 Referans rapordaki örnek (G 1,6 · 1315 g · 7200 rpm, a = 23 / b = 80,5 / c = 31,5 mm,
 r = 20 mm) uygulamada 2 × 1,40 g·mm ve 2 × 0,0698 g verir (örnek projenin 3. adımı).

@@ -227,7 +227,7 @@
       .map((p, i) => {
         const r = R.get(p.id);
         const sub = r.valid
-          ? `${esc(r.type.nameEn)} · ${r.planes.map((pl) => `${C.fmtAuto(pl.m)} g`).join(" / ")}`
+          ? `${esc(r.type.nameEn)} · ${r.planes.map((pl) => C.fmtMass(pl.m)).join(" / ")}`
           : `<span class="bad">Eksik tanım</span>`;
         return `<li class="proc-item ${p.id === state.ui.activeProcessId ? "active" : ""}" data-action="select-proc" data-id="${p.id}">
           <span class="num">${i + 1}</span>
@@ -284,7 +284,7 @@
         (pl, i) => `<div class="tol">
           <div class="lbl">${r.nPlanes === 1 ? "Düzlem (statik)" : `Düzlem ${i + 1}`}</div>
           <div class="where">${esc(pl.point.name)} · ${esc(pl.part.name)} · x = ${C.fmt(pl.x, 1)} mm · r = ${C.fmt(pl.r, 1)} mm</div>
-          <div class="big">${C.fmtAuto(pl.m)}<small>g</small></div>
+          <div class="big">${C.massParts(pl.m).v}<small>${C.massParts(pl.m).unit}</small></div>
           <div class="mid">${C.fmtAuto(pl.U)} <small>g·mm</small></div>
         </div>`
       )
@@ -400,7 +400,7 @@ U_per,A = ${fa(a.UA, 4)} g·mm    U_per,B = ${fa(a.UB, 4)} g·mm</div>`;
     if (r.transfer.mode === "static") {
       const pl = r.planes[0];
       transfer = `<div class="formula">Tek düzlem (statik): U_düzlem = U_per = ${fa(pl.U, 4)} g·mm
-m_per = U / r = ${fa(pl.U, 4)} / ${f(pl.r, 2)} = ${fa(pl.m, 4)} g
+m_per = U / r = ${fa(pl.U, 4)} / ${f(pl.r, 2)} = ${fa(pl.m, 4)} g${pl.m < 1 ? ` = ${C.fmtMass(pl.m, 4)}` : ""}
 ABC: a = ${f(r.abc.a, 2)} mm, c = ${f(r.abc.c, 2)} mm</div>`;
     } else {
       const t = r.transfer;
@@ -417,8 +417,8 @@ ISO 21940-11: yatak düzlemi toleransları doğrudan düzlemlere alınır (s = 1
 U₁ = s·U_per,A, U₂ = s·U_per,B →
 s_A = ${f(t.sA, 3)}, s_B = ${f(t.sB, 3)} → s = min(1, s_A, s_B) = ${f(t.s, 3)}`
       }
-U₁ = ${fa(p1.U, 4)} g·mm → m₁ = U₁/r₁ = ${fa(p1.U, 4)}/${f(p1.r, 2)} = ${fa(p1.m, 4)} g
-U₂ = ${fa(p2.U, 4)} g·mm → m₂ = U₂/r₂ = ${fa(p2.U, 4)}/${f(p2.r, 2)} = ${fa(p2.m, 4)} g
+U₁ = ${fa(p1.U, 4)} g·mm → m₁ = U₁/r₁ = ${fa(p1.U, 4)}/${f(p1.r, 2)} = ${fa(p1.m, 4)} g${p1.m < 1 ? ` = ${C.fmtMass(p1.m, 4)}` : ""}
+U₂ = ${fa(p2.U, 4)} g·mm → m₂ = U₂/r₂ = ${fa(p2.U, 4)}/${f(p2.r, 2)} = ${fa(p2.m, 4)} g${p2.m < 1 ? ` = ${C.fmtMass(p2.m, 4)}` : ""}
 ABC: a = ${f(r.abc.a, 2)}, b = ${f(r.abc.b, 2)}, c = ${f(r.abc.c, 2)} mm</div>`;
     }
     return `<div class="det-grid">

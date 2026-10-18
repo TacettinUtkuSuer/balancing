@@ -85,3 +85,12 @@ test("doğrulama hataları", () => {
   const st2 = rotor({ pts: ["p1"] });
   assert.equal(C.computeProcess(st2, st2.processes[0]).valid, false);
 });
+
+test("kütle gösterimi: 1 g altı otomatik mg", () => {
+  assert.deepEqual(C.massParts(0.0698), { v: "69,8", unit: "mg" });
+  assert.deepEqual(C.massParts(0.001), { v: "1,00", unit: "mg" });
+  assert.deepEqual(C.massParts(0.00042), { v: "0,420", unit: "mg" });
+  assert.deepEqual(C.massParts(2.5), { v: "2,50", unit: "g" });
+  assert.equal(C.massParts(0.99996).unit, "g"); // 1000 mg'a yuvarlanırsa g
+  assert.equal(C.fmtMass(0.275), "275 mg");
+});
