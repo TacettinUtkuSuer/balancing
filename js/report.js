@@ -18,6 +18,9 @@
   const ACCENT = [13, 71, 161];
   const ACCENT_BG = [237, 245, 253];
   const LINE = [195, 202, 211];
+  const AMBER = [180, 83, 9]; // opsiyonel adım
+  const NOTE_BG = [255, 249, 225];
+  const NOTE_LINE = [217, 170, 60];
 
   const TRANSLIT = { ş: "s", Ş: "S", ğ: "g", Ğ: "G", ı: "i", İ: "I", "−": "-", "≤": "<=", "≥": ">=", "…": "..." };
 
@@ -96,7 +99,18 @@
         txt(fit(v, 999, size, bold), x + labelW, y + i * step, { size, bold });
       });
     };
-    return { T, f, fa, txt, fit, hline, section, box, kv };
+    /** Küçük etiket (rozet); genişliğini döndürür. */
+    const pill = (x, y, text, bg, fg, size = 7.5) => {
+      doc.setFont(font.name, "bold");
+      doc.setFontSize(size);
+      const w = doc.getTextWidth(T(text)) + 3.6;
+      const h = size * 0.5;
+      doc.setFillColor(...bg);
+      doc.roundedRect(x, y - h + 0.9, w, h, 1, 1, "F");
+      txt(text, x + 1.8, y, { size, bold: true, color: fg });
+      return w;
+    };
+    return { T, f, fa, txt, fit, hline, section, box, kv, pill };
   }
 
   /**
@@ -104,36 +118,58 @@
    * Metinler sabit şablondur; verilerden yalnızca adlar ve temel sonuçlar eklenir.
    */
   function drawSummary(doc, font, state, procs, pageCount) {
-    const { T, f, txt, fit, hline, section, box, kv } = kit(doc, font);
+    const { T, f, txt, fit, hline, section, box, kv, pill } = kit(doc, font);
     const m = state.meta;
     const dateStr = new Date().toLocaleString("tr-TR", { dateStyle: "short", timeStyle: "short" });
     const R = procs.map((p) => ({ p, r: C.computeProcess(state, p) }));
+    const nOpt = procs.filter((p) => p.optional).length;
     const rotorName = m.rotorId || m.rotorModel || "Rotor";
     const totalMass = state.parts.reduce((a, pt) => a + (C.num(pt.mass) > 0 ? C.num(pt.mass) : 0), 0);
     const g = state.global;
 
-    txt("Balans Proses Özeti", M, 20, { size: 22 });
-    txt("Özet", PAGE_W - M, 20, { size: 9, color: MUTED, align: "right" });
-    hline(23, M, PAGE_W - M, 0.6);
+    // Kapak çerçevesi ve başlık bandı
+    const FX = 8;
+    const FW = PAGE_W - 2 * FX;
+    const bandH = 40;
+    doc.setFillColor(...ACCENT);
+    doc.roundedRect(FX, FX, FW, bandH, 3, 3, "F");
+    doc.rect(FX, FX + 4, FW, bandH - 4, "F");
+    txt("BALANS PROSES ÖZETİ", M, FX + 9, { size: 9, bold: true, color: [187, 214, 247] });
+    {
+      const title = (m.title || "").trim() || rotorName;
+      doc.setFont(font.name, "bold");
+      doc.setFontSize(20);
+      let lines = doc.splitTextToSize(T(title), CW);
+      if (lines.length > 2) lines = [lines[0], fit(lines.slice(1).join(" "), CW, 20, true)];
+      doc.setTextColor(255, 255, 255);
+      const ty = lines.length === 1 ? FX + 22 : FX + 18.5;
+      lines.forEach((l, i) => doc.text(l, M, ty + i * 8.5));
+    }
+    txt(fit([m.rotorId, m.rotorModel].filter(Boolean).join("  ·  ") || " ", CW, 9.5), M, FX + bandH - 4.5, { size: 9.5, color: [220, 233, 250] });
+    doc.setDrawColor(...ACCENT);
+    doc.setLineWidth(0.8);
+    doc.roundedRect(FX, FX, FW, PAGE_H - 2 * FX, 3, 3, "S");
+
+    const ky = FX + bandH + 8;
     kv(
       [
         ["Sipariş no", m.orderNo || "–"],
         ["Rotor ID", m.rotorId || "–", true],
         ["Rotor modeli", m.rotorModel || "–"],
       ],
-      M + 4, 28.5, 28
+      M + 4, ky, 28
     );
     kv(
       [
         ["Rapor tarihi", dateStr],
-        ["Proses adımı", `${procs.length}`, true],
+        ["Proses adımı", nOpt ? `${procs.length}  (${nOpt} opsiyonel)` : `${procs.length}`, true],
         ["Hazırlayan", m.operator || "–"],
       ],
-      112, 28.5, 28
+      112, ky, 28
     );
 
     // Ne yapılacak?
-    let y = 48;
+    let y = ky + 19;
     section("Bu doküman ne anlatıyor?", y);
     y += 7;
     const para = (text, size = 10) => {
@@ -155,6 +191,11 @@
         `balans kalitesinden (G sınıfı) hesaplanır. Operatör için sonuç, her düzeltme düzleminde ` +
         `bırakılabilecek en fazla artık kütledir (mg / g).`
     );
+    if (nOpt)
+      para(
+        `${nOpt === 1 ? "Bir adım" : `${nOpt} adım`} opsiyonel olarak işaretlenmiştir (OPS.): bu adımların yapılması ` +
+          `tercihe bağlıdır; gerekli görülmezse atlanabilir.`
+      );
 
     // Ürün: şema + birkaç temel bilgi
     y += 2;
@@ -180,14 +221,14 @@
     section("Proses adımları", y);
     y += 4;
     const cols = [
-      { h: "Adım", w: 12, a: "left" },
+      { h: "Adım", w: 19, a: "left" },
       { h: "Proses", w: 40, a: "left" },
-      { h: "Montajdaki parçalar", w: 40, a: "left" },
+      { h: "Montajdaki parçalar", w: 33, a: "left" },
       { h: "Balans", w: 44, a: "left" },
       { h: "İzin verilen artık kütle", w: CW - 136, a: "right" },
     ];
     const rowH = 7;
-    const footerY = PAGE_H - 12;
+    const footerY = PAGE_H - 19; // kapak çerçevesinin içinde
     const bottom = footerY - 30; // okuma rehberi için yer
     doc.setFillColor(236, 240, 244);
     doc.rect(M, y, CW, 6, "F");
@@ -209,6 +250,7 @@
       const tol = r.valid ? r.planes.map((pl, k) => `${r.nPlanes === 1 ? "" : `D${k + 1} `}${C.fmtMass(pl.m)}`).join("  ") : "tanım eksik";
       const vals = [String(state.processes.indexOf(p) + 1), p.name || "–", parts, how, tol];
       let x = M;
+      if (p.optional) pill(M + 7, y + 4.6, "OPS.", [255, 237, 204], AMBER, 7);
       cols.forEach((c, j) => {
         const bold = j === 1 || j === 4;
         txt(fit(vals[j], c.w - 4, 9, bold), c.a === "right" ? x + c.w - 2 : x + 2, y + 4.8, {
@@ -223,6 +265,10 @@
       y += rowH;
     }
     hline(y, M, PAGE_W - M, 0.25, LINE);
+    if (nOpt) {
+      txt("OPS. = opsiyonel adım (yapılması tercihe bağlı)", M + 2, y + 4, { size: 7.5, color: AMBER });
+      y += 4;
+    }
 
     // Okuma rehberi
     y += 10;
@@ -232,6 +278,7 @@
       "Her proses adımı için ayrı bir sayfa: rotor tipi, şema ve her düzlem için izin verilen artık kütle ile dengesizlik.",
       "Balans geometrisi: yataktan yatağa ve yataktan düzleme mesafeler, düzeltme yarıçapları.",
       "ISO 21940-11 hesap özeti ve komşu standart G sınıflarıyla karşılaştırma.",
+      "Proses notları ilgili adımın sayfasında, başlığın hemen altında yer alır.",
     ].forEach((l, i) => txt(fit(`•  ${l}`, CW, 8.5), M + 2, y + 6 + i * 4.6, { size: 8.5, color: LABEL }));
 
     hline(footerY, M, PAGE_W - M, 0.3, LINE);
@@ -241,10 +288,16 @@
   }
 
   function drawPage(doc, font, state, p, r, stepNo, stepTotal, pageNo, pageCount) {
-    const { T, f, fa, txt, fit, hline, section, box, kv } = kit(doc, font);
+    const { T, f, fa, txt, fit, hline, section, box, kv, pill } = kit(doc, font);
 
     // ---------------- Başlık (şablon: "Balancing report")
     txt("Balans Raporu", M, 20, { size: 22 });
+    if (p.optional) {
+      doc.setFont(font.name, "normal");
+      doc.setFontSize(22);
+      const tw = doc.getTextWidth(T("Balans Raporu"));
+      pill(M + tw + 5, 19, "OPSİYONEL ADIM – yapılması tercihe bağlı", [255, 237, 204], AMBER, 8.5);
+    }
     txt(`Proses ${stepNo} / ${stepTotal}`, PAGE_W - M, 20, { size: 9, color: MUTED, align: "right" });
     hline(23, M, PAGE_W - M, 0.6);
     const m = state.meta;
@@ -267,11 +320,28 @@
       112, 28.5, 28
     );
 
-    // ---------------- Hızlı bakış
+    // ---------------- Proses notu (varsa, başlığın hemen altında)
     let y = 46;
+    const note = (p.note || "").trim();
+    if (note) {
+      doc.setFont(font.name, "normal");
+      doc.setFontSize(9.5);
+      let lines = doc.splitTextToSize(T(note), CW - 30);
+      if (lines.length > 3) lines = [...lines.slice(0, 2), fit(lines.slice(2).join(" "), CW - 30, 9.5)];
+      const nh = 4 + lines.length * 4.3;
+      box(M, 41.5, CW, nh, NOTE_BG, NOTE_LINE, 0.5);
+      txt("PROSES NOTU", M + 3, 46.3, { size: 8, bold: true, color: AMBER });
+      doc.setFont(font.name, "normal");
+      doc.setFontSize(9.5);
+      doc.setTextColor(...INK);
+      lines.forEach((l, i) => doc.text(l, M + 27, 46.3 + i * 4.3));
+      y = 41.5 + nh + 7;
+    }
+
+    // ---------------- Hızlı bakış
     section("Tip verisi ve hızlı bakış", y);
     y += 4;
-    const topH = 54;
+    const topH = note ? 48 : 54; // not varsa sayfaya sığması için biraz kısalır
     // Sol: temsil görseli + tip adı
     const leftW = 58;
     box(M, y, leftW, topH, [255, 255, 255]);
@@ -295,7 +365,8 @@
 
     // Tespit gerekçesi (en fazla 3 satır)
     {
-      const reason = r.valid ? `Tespit gerekçesi: ${r.type.reason}` : "";
+      // Not varsa yer açmak için gerekçe raporda atlanır (ekranda ve detaylarda durur)
+      const reason = r.valid && !note ? `Tespit gerekçesi: ${r.type.reason}` : "";
       doc.setFont(font.name, "normal");
       doc.setFontSize(8);
       let lines = reason ? doc.splitTextToSize(T(reason), CW) : [];
@@ -303,7 +374,7 @@
       doc.setTextColor(...MUTED);
       lines.forEach((l, i) => doc.text(l, M, y + 3 + i * 3.4));
     }
-    y += 11;
+    y += note ? 2 : 11;
 
     // ---------------- Tolerans kutuları (g ve g·mm)
     const tolH = 34;
