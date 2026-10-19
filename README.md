@@ -35,6 +35,17 @@ Her proses kartı iki katmanlıdır:
   dengesi / yatak yükleri, ISO 21940-11 formül adımları, yatak payları, düzlem transferi ve
   ham parametreler.
 
+### Proje başlığı, opsiyonel adımlar ve notlar
+
+* **Proje başlığı** (Rotor Tanımı → Rapor bilgileri): tüm iş için tek metin; özet sayfasının
+  başlık bandında büyük olarak gösterilir.
+* **Opsiyonel** anahtarı (proses kartının başlığında): adım tercihe bağlı olarak işaretlenir.
+  Proses listesinde ve özet panelinde rozetle, raporda başlıkta "OPSİYONEL ADIM" rozetiyle,
+  özet sayfasındaki tabloda "OPS." etiketiyle ve açıklama cümlesiyle belirtilir.
+* **Proses notu** (Proses ayarları): raporda o prosesin sayfasında, başlığın hemen altında
+  sarı bir kutuda gösterilir (en fazla 3 satır). Not varsa sayfaya sığması için tespit
+  gerekçesi raporda atlanır; ekranda ve mühendislik detaylarında görünmeye devam eder.
+
 ### Sayı biçimi
 
 Ondalık ayırıcı nokta, binlik ayırıcı üst tırnaktır: `45'000 rpm`, `2'470.0 g`, `0.0765 g·mm`.
@@ -60,7 +71,7 @@ hesaplanır). *JSON içe aktar* projeyi eksiksiz geri yükler. Örnek: [`example
 ### PDF
 
 *PDF raporu* (tek proses) veya *Tüm raporlar* (her proses bir sayfa). *Tüm raporlar* çıktısının ilk
-sayfası **Balans Proses Özeti**dir: ürünün ve yapılacak işin sade bir tanımı (sabit şablon metin),
+sayfası çerçeveli bir kapak / özet olan **Balans Proses Özeti**dir (başlık bandında proje başlığı): ürünün ve yapılacak işin sade bir tanımı (sabit şablon metin),
 rotor şeması ve her adım için montajdaki parçalar, düzlem sayısı / rotor tipi ve izin verilen artık
 kütleyi gösteren tek tablo. Sayfa düzeni referans
 "Balancing report" şablonunu izler: başlık bilgileri → tip verisi ve hızlı bakış (temsil görseli,

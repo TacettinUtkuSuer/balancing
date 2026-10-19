@@ -19,7 +19,7 @@
   function emptyState() {
     return {
       schema: SCHEMA,
-      meta: { orderNo: "", rotorId: "", rotorModel: "", operator: "", direction: "İleri", notes: "" },
+      meta: { title: "", orderNo: "", rotorId: "", rotorModel: "", operator: "", direction: "İleri", notes: "" },
       global: { serviceSpeed: null, balanceSpeed: null, G: 2.5 },
       parts: [],
       bearings: [],
@@ -30,7 +30,7 @@
 
   function exampleState() {
     const s = emptyState();
-    s.meta = { orderNo: "00001", rotorId: "POMPA ROTORU 1", rotorModel: "ANOVA", operator: "", direction: "İleri", notes: "Örnek: 3 kademeli montaj balansı" };
+    s.meta = { title: "Pompa rotoru kademeli montaj balansı", orderNo: "00001", rotorId: "POMPA ROTORU 1", rotorModel: "ANOVA", operator: "", direction: "İleri", notes: "Örnek: 3 kademeli montaj balansı" };
     s.global = { serviceSpeed: 7200, balanceSpeed: 2000, G: 1.6 };
     const shaft = { id: "p-saft", name: "Şaft", mass: 315, x: 67.5, points: [{ id: "pt-s1", name: "Ş-orta", x: 67.5, r: 8 }] };
     const hub = { id: "p-gobek", name: "Göbek", mass: 500, x: 40, points: [{ id: "pt-g1", name: "G-ön", x: 23, r: 20 }] };
@@ -45,7 +45,7 @@
       { id: "pr-1", name: "Adım 1 – Çıplak şaft", partIds: ["p-saft"], bearingIds: ["b-a", "b-b"], planes: 1, pointIds: ["pt-s1"], overrides: { serviceSpeed: null, balanceSpeed: null, G: 2.5 } },
       { id: "pr-2", name: "Adım 2 – Şaft + Göbek", partIds: ["p-saft", "p-gobek"], bearingIds: ["b-a", "b-b"], planes: 2, pointIds: ["pt-g1", "pt-s1"], overrides: { serviceSpeed: null, balanceSpeed: null, G: null } },
       { id: "pr-3", name: "Adım 3 – Komple rotor", partIds: ["p-saft", "p-gobek", "p-cark"], bearingIds: ["b-a", "b-b"], planes: 2, pointIds: ["pt-g1", "pt-c1"], overrides: { serviceSpeed: null, balanceSpeed: null, G: null } },
-      { id: "pr-4", name: "Adım 4 – Çark dış düzlem", partIds: ["p-saft", "p-gobek", "p-cark"], bearingIds: ["b-a", "b-b2"], planes: 2, pointIds: ["pt-g1", "pt-c2"], overrides: { serviceSpeed: null, balanceSpeed: 1500, G: null } },
+      { id: "pr-4", name: "Adım 4 – Çark dış düzlem", partIds: ["p-saft", "p-gobek", "p-cark"], bearingIds: ["b-a", "b-b2"], planes: 2, pointIds: ["pt-g1", "pt-c2"], overrides: { serviceSpeed: null, balanceSpeed: 1500, G: null }, optional: true, note: "Yalnızca çark dış düzlemine erişim varsa uygulanır." },
     ];
     s.ui = { tab: "processes", activeProcessId: "pr-3" };
     return s;
@@ -73,6 +73,8 @@
       bearingIds: (pr.bearingIds || []).map(String),
       planes: pr.planes === 1 ? 1 : 2,
       pointIds: (pr.pointIds || []).map(String),
+      optional: !!pr.optional,
+      note: String(pr.note ?? ""),
       overrides: {
         serviceSpeed: numOrNull(pr.overrides?.serviceSpeed),
         balanceSpeed: numOrNull(pr.overrides?.balanceSpeed),
@@ -131,6 +133,7 @@
       <section class="card">
         <div class="card-h"><h2>Rapor bilgileri</h2></div>
         <div class="card-b fields">
+          <label class="field span-all"><span>Proje başlığı <span class="unit">(tüm iş için; özet sayfasında başlık olarak görünür)</span></span><input data-f="meta.title" value="${esc(m.title)}" placeholder="Örn. E-motor rotoru kademeli balans planı" /></label>
           <label class="field"><span>Sipariş no</span><input data-f="meta.orderNo" value="${esc(m.orderNo)}" /></label>
           <label class="field"><span>Rotor ID</span><input data-f="meta.rotorId" value="${esc(m.rotorId)}" /></label>
           <label class="field"><span>Rotor modeli</span><input data-f="meta.rotorModel" value="${esc(m.rotorModel)}" /></label>
@@ -231,7 +234,7 @@
           : `<span class="bad">Eksik tanım</span>`;
         return `<li class="proc-item ${p.id === state.ui.activeProcessId ? "active" : ""}" data-action="select-proc" data-id="${p.id}">
           <span class="num">${i + 1}</span>
-          <span><div class="t">${esc(p.name || `Proses ${i + 1}`)}</div><div class="s">${sub}</div></span></li>`;
+          <span><div class="t">${esc(p.name || `Proses ${i + 1}`)}${p.optional ? ` <span class="opt-tag">opsiyonel</span>` : ""}</div><div class="s">${sub}</div></span></li>`;
       })
       .join("");
   }
@@ -242,6 +245,7 @@
       <div class="card-h">
         <input class="cell" style="font-weight:700;font-size:15px;max-width:420px" data-proc="${p.id}" data-k="name" value="${esc(p.name)}" aria-label="Proses adı" />
         <div class="actions">
+          <label class="chip opt-chip ${p.optional ? "on" : ""}" title="Yapılması tercihe bağlı adım; raporda belirtilir"><input type="checkbox" data-proc="${p.id}" data-k="optional" ${p.optional ? "checked" : ""}/>Opsiyonel</label>
           <button type="button" class="btn small icon" data-action="move-proc" data-dir="-1" ${idx === 0 ? "disabled" : ""} title="Yukarı taşı">↑</button>
           <button type="button" class="btn small icon" data-action="move-proc" data-dir="1" ${idx === state.processes.length - 1 ? "disabled" : ""} title="Aşağı taşı">↓</button>
           <button type="button" class="btn small" data-action="dup-proc">Kopyala</button>
@@ -275,7 +279,10 @@
     </div>
     <div class="ref-note">Balans hızı (referans, toleransı etkilemez): ${C.fmt(pr.balanceSpeed, 0)} rpm · ${pr.sources.balanceSpeed === "process" ? "prosese özel" : "genel"}</div>`;
     const schem = `<div class="schem-box">${S.toSVG(S.build(state, { process: p, result: r, h: 260 }))}</div>`;
-    const warn = r.warnings.length ? `<div class="alert warn">${r.warnings.map(esc).join("<br>")}</div>` : "";
+    const flags =
+      (p.optional ? `<div class="alert opt"><b>Opsiyonel adım</b> – yapılması tercihe bağlıdır; raporda böyle belirtilir.</div>` : "") +
+      (p.note && p.note.trim() ? `<div class="alert note"><b>Proses notu:</b> ${esc(p.note).replace(/\n/g, "<br>")}</div>` : "");
+    const warn = flags + (r.warnings.length ? `<div class="alert warn">${r.warnings.map(esc).join("<br>")}</div>` : "");
     if (!r.valid) {
       return `<div class="alert err"><b>Hesap yapılamadı:</b><ul>${r.errors.map((e) => `<li>${esc(e)}</li>`).join("")}</ul></div>${warn}${kpis}<div style="height:10px"></div>${schem}`;
     }
@@ -382,6 +389,10 @@
         ${ov("serviceSpeed", "Servis hızı", "[rpm]")}
         ${ov("G", "Kalite sınıfı G", "[mm/s]")}
         <p class="hint">Geçerli: ${C.fmt(pr.balanceSpeed, 0)} rpm balans · ${C.fmt(pr.serviceSpeed, 0)} rpm servis · G ${C.fmtAuto(pr.G, 2)}</p>
+      </div>
+      <div class="cfg-block span-all">
+        <h4>Proses notu <span class="hint">(raporda bu prosesin sayfasında gösterilir)</span></h4>
+        <textarea class="cell note-input" rows="2" data-proc="${p.id}" data-k="note" placeholder="Örn. bu adımda dikkat edilecek nokta, kullanılacak ağırlık tipi…">${esc(p.note)}</textarea>
       </div>
     </div>`;
   }
@@ -513,8 +524,8 @@ ABC: a = ${f(r.abc.a, 2)}, b = ${f(r.abc.b, 2)}, c = ${f(r.abc.c, 2)} mm</div>`;
       if (b) b[d.k] = val;
     } else if (d.proc && d.ov) {
       findProc(d.proc).overrides[d.ov] = val;
-    } else if (d.proc && d.k === "name") {
-      findProc(d.proc).name = val;
+    } else if (d.proc && (d.k === "name" || d.k === "note")) {
+      findProc(d.proc)[d.k] = val;
     } else return;
     refresh();
   }
@@ -522,8 +533,9 @@ ABC: a = ${f(r.abc.a, 2)}, b = ${f(r.abc.b, 2)}, c = ${f(r.abc.c, 2)} mm</div>`;
   function onChange(e) {
     const t = e.target;
     const d = t.dataset;
-    if (!d.proc || !["part", "bearing", "point"].includes(d.k)) return;
+    if (!d.proc || !["part", "bearing", "point", "optional"].includes(d.k)) return;
     const p = findProc(d.proc);
+    if (d.k === "optional") p.optional = t.checked;
     if (d.k === "part") {
       p.partIds = t.checked ? [...new Set([...p.partIds, t.value])] : p.partIds.filter((x) => x !== t.value);
       const allowed = new Set(C.allPoints(state).filter((pp) => p.partIds.includes(pp.part.id)).map((pp) => pp.point.id));
@@ -553,6 +565,8 @@ ABC: a = ${f(r.abc.a, 2)}, b = ${f(r.abc.b, 2)}, c = ${f(r.abc.c, 2)} mm</div>`;
       planes: prev ? prev.planes : 2,
       pointIds: [],
       overrides: { serviceSpeed: null, balanceSpeed: null, G: null },
+      optional: false,
+      note: "",
     };
     state.processes.push(p);
     state.ui.activeProcessId = p.id;
