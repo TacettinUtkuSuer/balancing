@@ -171,12 +171,19 @@
         ["Hazırlanma Tarihi", dateStr],
         ["Proses Adımı", nOpt ? `${procs.length}  (${nOpt} opsiyonel)` : `${procs.length}`, true],
         ["Hazırlayan / Operatör", fit(m.operator || "–", 40, 9)],
+        ["Balans Tarihi", ""],
       ],
       112, ky, 38
     );
+    // Balans tarihi: elle doldurulacak boş alan
+    doc.setDrawColor(...CHAR);
+    doc.setLineWidth(0.25);
+    doc.setLineDashPattern([0.6, 0.9], 0);
+    doc.line(112 + 38, ky + 3 * 4.6 + 0.8, PAGE_W - M, ky + 3 * 4.6 + 0.8);
+    doc.setLineDashPattern([], 0);
 
     // Genel not (varsa)
-    let y = ky + 19;
+    let y = ky + 23.6;
     if ((m.notes || "").trim()) {
       txt("Not", M + 4, y - 4, { size: 9, color: LABEL });
       doc.setFont(font.name, "normal");
@@ -323,7 +330,7 @@
     }
     const noteH = note ? 4 + noteLines.length * 4.3 : 0;
     const rowY = note ? 41.5 + noteH + 4.5 : 46; // üst sıranın (tip görseli + kutular) başladığı yer
-    const topRowH = note ? 34 : 38;
+    const topRowH = note ? 32 : 38;
 
     // Opsiyonel sayfa: yalnızca şemanın üstündeki bölüm açık renkli zeminle ayrılır (toner tasarrufu)
     if (p.optional) {
@@ -422,7 +429,7 @@
     y += topRowH + 4;
 
     // ---------------- Şema (tam genişlik)
-    const schH = note ? 48 : 54;
+    const schH = note ? 44 : 54;
     box(M, y, CW, schH, [255, 255, 255]);
     {
       const H = 256;
@@ -520,35 +527,12 @@
 
     // ---------------- Komşu standart G sınıfları (bilgi amaçlı)
     const grades = C.gradeComparison(r);
-    // Montajdaki parçaların tabloya sığması önceliklidir; sığmıyorsa G karşılaştırması tek satıra iner
-    const onParts = state.parts.filter((pt) => p.partIds.includes(pt.id)).length;
-    const partsNeed = 3.5 + 3.6 * (onParts + 1) + 11;
-    const fullGH = 2.5 + 3.8 * (grades.length + 1) + 5.5;
-    const compactG = grades.length && PAGE_H - SAFE - 9 - 10 - (y + fullGH) < partsNeed;
-    if (compactG) {
-      txt("Komşu standart G sınıfları", M, y, { size: 9.5 });
-      txt("bilgi amaçlı", PAGE_W - M, y, { size: 7, color: MUTED, align: "right" });
-      y += 4.2;
-      let gx = M;
-      grades.forEach((g) => {
-        const t = `G ${fa(g.G, 2)}${g.current ? " (seçili)" : ""}: ${g.planes.map((x) => C.fmtMass(x.m)).join(" / ")}`;
-        doc.setFont(font.name, g.current ? "bold" : "normal");
-        doc.setFontSize(8);
-        const w = doc.getTextWidth(T(t));
-        if (g.current) {
-          doc.setFillColor(...YELLOW_SOFT);
-          doc.rect(gx - 1, y - 3, w + 2, 4, "F");
-        }
-        txt(t, gx, y, { size: 8, bold: g.current, color: g.current ? BLACK : LABEL });
-        gx += w + 6;
-      });
-      y += 5.5;
-    } else if (grades.length) {
+    if (grades.length) {
       txt("Komşu standart G sınıfları", M, y, { size: 11 });
       txt("bilgi amaçlı · seçili G vurgulu", PAGE_W - M, y, { size: 7, color: MUTED, align: "right" });
       hline(y + 1.2, M, PAGE_W - M, 0.25);
       y += 2.5;
-      const gh = 3.8;
+      const gh = 3.6;
       const gcols = [42, 30, ...r.planes.map(() => (CW - 72) / r.planes.length)];
       const ghead = ["Sınıf", "U_per [g·mm]", ...r.planes.map((_, i) => (r.nPlanes === 1 ? "Düzlem" : `D${i + 1}  (mg · g·mm)`))];
       doc.setFillColor(236, 240, 244);
@@ -581,20 +565,9 @@
 
     // ---------------- Kompakt detay tablosu (kalan alana sığdırılır)
     const footerY = PAGE_H - SAFE - 9; // alt bilgi yazıları güvenli sınırın içinde
-    // Tespit gerekçesi (ikincil bilgi) sayfanın altında; not varsa yer açmak için atlanır
-    let reasonLines = [];
-    if (r.valid && !note) {
-      doc.setFont(font.name, "normal");
-      doc.setFontSize(7.2);
-      reasonLines = doc.splitTextToSize(T(`Tespit gerekçesi: ${r.type.reason}`), CW);
-      if (reasonLines.length > 2) reasonLines = [reasonLines[0], fit(reasonLines.slice(1).join(" "), CW, 7.2)];
-    }
-    // Montajdaki parçalara sığacak yer yoksa ikincil bilgi olan gerekçe raporda atlanır
-    const onCount = state.parts.filter((pt) => p.partIds.includes(pt.id)).length;
-    const bottomFor = (lines) => (lines.length ? footerY - 2.2 - (lines.length - 1) * 3.1 - 4 : footerY) - 10;
-    if (reasonLines.length && bottomFor(reasonLines) - (y + 3.5) < (onCount + 1) * 3.6) reasonLines = [];
-    const reasonY = footerY - 2.2 - (reasonLines.length - 1) * 3.1;
-    const tableBottom = bottomFor(reasonLines); // yatak satırı için yer
+    // (Tespit gerekçesi raporda yer almaz; ekranda ve mühendislik detaylarında görünür.)
+    const tableBottom = footerY - 10; // yatak satırı için yer
+    const titleY = y;
     txt("Parça listesi ve referans yataklar", M, y, { size: 11 });
     hline(y + 1.2, M, PAGE_W - M, 0.25);
     y += 3.5;
@@ -629,12 +602,13 @@
       rowH = 3.6;
       maxRows = Math.max(1, Math.floor((avail - rowH) / rowH));
     }
-    let shown = rows;
-    let hidden = 0;
-    if (rows.length > maxRows) {
-      // son satır "… ve N parça daha" özetine ayrılır; asla sayfa dışına taşmaz
-      shown = rows.slice(0, Math.max(0, maxRows - 1));
-      hidden = rows.length - shown.length;
+    // Sığmayan satırlar (önce montaj dışı olanlar) listelenmez; özeti başlık satırına yazılır,
+    // böylece tablo satırları montajdaki parçalara kalır ve sayfa dışına taşmaz
+    const shown = rows.slice(0, maxRows);
+    const hidden = rows.length - shown.length;
+    if (hidden) {
+      const hiddenOn = rows.slice(maxRows).filter((x) => x.on).length;
+      txt(`+${hidden} parça listelenmedi${hiddenOn ? ` (${hiddenOn} montajda)` : " (montaj dışı)"} · tam liste JSON dosyasında`, PAGE_W - M, titleY, { size: 7, color: MUTED, align: "right" });
     }
     doc.setFillColor(236, 240, 244);
     doc.rect(M, y, CW, rowH, "F");
@@ -660,21 +634,11 @@
       });
       y += rowH;
     });
-    if (hidden) {
-      txt(`… ve ${hidden} parça daha (tam liste JSON dosyasında)`, M + 1.5, y + rowH - 1.1, { size, color: MUTED });
-      y += rowH;
-    }
     hline(y, M, PAGE_W - M, 0.25, LINE);
     const brg = state.bearings
       .map((b) => `${b.name}: x = ${f(C.num(b.x), 1)} mm${p.bearingIds.includes(b.id) ? " (referans)" : ""}`)
       .join("   ·   ");
     txt(fit(`Yataklar — ${brg || "tanımsız"}`, CW, 8), M, Math.min(y + 4.5, tableBottom + 6), { size: 8 });
-    if (reasonLines.length) {
-      doc.setFont(font.name, "normal");
-      doc.setFontSize(7.2);
-      doc.setTextColor(...MUTED);
-      reasonLines.forEach((l, i) => doc.text(l, M, reasonY + i * 3.1));
-    }
 
     // ---------------- Alt bilgi
     hline(footerY, M, PAGE_W - M, 0.3, LINE);
