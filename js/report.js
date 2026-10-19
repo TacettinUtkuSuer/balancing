@@ -197,7 +197,7 @@
     );
     if (nOpt)
       para(
-        `${nOpt === 1 ? "Bir adım" : `${nOpt} adım`} opsiyonel olarak işaretlenmiştir (OPS.): bu adımların yapılması ` +
+        `${nOpt === 1 ? "Bir adım" : `${nOpt} adım`} opsiyonel olarak işaretlenmiştir: bu adımların yapılması ` +
           `tercihe bağlıdır; gerekli görülmezse atlanabilir.`
       );
 
@@ -219,8 +219,8 @@
     section("Proses adımları", y);
     y += 4;
     const cols = [
-      { h: "Adım", w: 19, a: "left" },
-      { h: "Proses", w: CW - 19 - 28 - 26 - 34, a: "left" },
+      { h: "Adım", w: 24, a: "left" },
+      { h: "Proses", w: CW - 24 - 28 - 26 - 34, a: "left" },
       { h: "Düzlem", w: 28, a: "left" },
       { h: "Kalite", w: 26, a: "right" },
       { h: "Toplam kütle", w: 34, a: "right" },
@@ -239,7 +239,16 @@
     const maxRows = Math.max(1, Math.floor((bottom - y) / rowH));
     const shown = R.length > maxRows ? R.slice(0, maxRows - 1) : R;
     shown.forEach(({ p, r }, i) => {
-      if (i % 2 === 1) {
+      if (p.optional) {
+        // Opsiyonel satır: açık sarı zemin + kesikli çerçeve
+        doc.setFillColor(...YELLOW_SOFT);
+        doc.rect(M, y + 0.4, CW, rowH - 0.8, "F");
+        doc.setDrawColor(...CHAR);
+        doc.setLineWidth(0.3);
+        doc.setLineDashPattern([1.2, 1], 0);
+        doc.rect(M, y + 0.4, CW, rowH - 0.8, "S");
+        doc.setLineDashPattern([], 0);
+      } else if (i % 2 === 1) {
         doc.setFillColor(248, 250, 252);
         doc.rect(M, y, CW, rowH, "F");
       }
@@ -251,7 +260,7 @@
         r.mass > 0 ? `${f(r.mass, 1)} g` : "–",
       ];
       let x = M;
-      if (p.optional) pill(M + 7, y + 4.6, "OPS.", YELLOW_SOFT, BLACK, 7);
+      if (p.optional) pill(M + 6, y + 4.6, "OPSİYONEL", CHAR, [255, 255, 255], 6.5);
       cols.forEach((c, j) => {
         const bold = j === 1 || j === 3;
         txt(fit(vals[j], c.w - 4, 9.5, bold), c.a === "right" ? x + c.w - 2 : x + 2, y + 4.8, { size: 9.5, bold, align: c.a, color: INK });
@@ -265,7 +274,8 @@
     }
     hline(y, M, PAGE_W - M, 0.25, LINE);
     if (nOpt) {
-      txt("OPS. = opsiyonel adım (yapılması tercihe bağlı)", M + 2, y + 4, { size: 7.5, color: AMBER });
+      const pw = pill(M + 2, y + 4.4, "OPSİYONEL", CHAR, [255, 255, 255], 6.5);
+      txt("kesikli çerçeveli satırlar opsiyonel adımlardır; yapılması tercihe bağlıdır.", M + 4 + pw, y + 4.4, { size: 7.5, color: LABEL });
       y += 4;
     }
 
@@ -292,10 +302,25 @@
     // ---------------- Başlık (şablon: "Balancing report")
     txt("Balans Raporu", M, 20, { size: 22 });
     if (p.optional) {
+      // Opsiyonel sayfa: belirgin koyu rozet, kesikli sayfa çerçevesi ve sol kenarda dikey şerit
       doc.setFont(font.name, "normal");
       doc.setFontSize(22);
       const tw = doc.getTextWidth(T("Balans Raporu"));
-      pill(M + tw + 5, 19, "OPSİYONEL ADIM – yapılması tercihe bağlı", YELLOW_SOFT, BLACK, 8.5);
+      const pw = pill(M + tw + 5, 19.3, "OPSİYONEL ADIM", CHAR, [255, 255, 255], 11);
+      txt("yapılması tercihe bağlıdır", M + tw + 7 + pw, 19.3, { size: 8.5, bold: true, color: CHAR });
+      doc.setDrawColor(...CHAR);
+      doc.setLineWidth(0.6);
+      doc.setLineDashPattern([3, 2], 0);
+      doc.roundedRect(4, 4, PAGE_W - 8, PAGE_H - 4 - 2.2, 2.5, 2.5, "S"); // alt bilginin dışında
+      doc.setLineDashPattern([], 0);
+      doc.setFillColor(...YELLOW_SOFT);
+      doc.rect(7.2, 40, 5.2, PAGE_H - 80, "F");
+      doc.setFillColor(...YELLOW);
+      doc.rect(7.2, 40, 0.9, PAGE_H - 80, "F");
+      doc.setFont(font.name, "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(...CHAR);
+      for (let ty = PAGE_H - 48; ty > 60; ty -= 72) doc.text(T("OPSİYONEL ADIM"), 11.2, ty, { angle: 90 });
     }
     txt(`Proses ${stepNo} / ${stepTotal}`, PAGE_W - M, 20, { size: 9, color: MUTED, align: "right" });
     hline(23, M, PAGE_W - M, 0.6);
@@ -390,7 +415,9 @@
       const bw = n === 1 ? (CW - gap) * 0.62 : (CW - gap) / 2;
       r.planes.forEach((pl, i) => {
         const bx = M + i * (bw + gap);
+        if (p.optional) doc.setLineDashPattern([2.5, 1.5], 0);
         box(bx, y, bw, tolH, PAPER, CHAR, 0.9);
+        doc.setLineDashPattern([], 0);
         doc.setFillColor(...YELLOW);
         doc.rect(bx + 4, y + 2.6, 10, 1, "F");
         txt(n === 1 ? "DÜZLEM (STATİK)" : `DÜZLEM ${i + 1}`, bx + 4, y + 8, { size: 8.5, bold: true, color: BLACK });
