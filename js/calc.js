@@ -292,7 +292,10 @@
 
   function fmt(v, d = 2) {
     if (v === null || v === undefined || !Number.isFinite(v)) return "–";
-    return v.toLocaleString("tr-TR", { minimumFractionDigits: d, maximumFractionDigits: d });
+    // Ondalık ayırıcı ".", binlik ayırıcı "'" (ör. 45'000.5)
+    const [int, frac] = Math.abs(v).toFixed(d).split(".");
+    const sign = v < 0 && Number(Math.abs(v).toFixed(d)) !== 0 ? "-" : "";
+    return sign + int.replace(/\B(?=(\d{3})+(?!\d))/g, "'") + (frac ? `.${frac}` : "");
   }
 
   /** Değer büyüklüğüne göre anlamlı basamak sayısı. */

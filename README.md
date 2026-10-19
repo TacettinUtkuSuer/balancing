@@ -28,12 +28,21 @@ python3 -m http.server 8000   # → http://localhost:8000
 Her proses kartı iki katmanlıdır:
 
 * **Operatör paneli (ilk bakış):** otomatik rotor tipi + temsil görseli, tespit gerekçesi,
-  her düzlem için büyük **gram (g)** ve **g·mm** tolerans kutuları, düzlemin **en yakın yatağa
-  mesafesi**, hızlar, canlı şema (yatak açıklığı L ve düzlem–yatak ölçüleri) ve komşu standart G
-  sınıflarıyla (bir alt, iki üst) bilgi amaçlı karşılaştırma tablosu.
+  her düzlem için büyük **gram / mg** ve **g·mm** tolerans kutuları (yarıçap r ile), öne çıkarılmış
+  **rotor kütlesi** ve **G sınıfı**, servis hızı, canlı şema (yatak açıklığı L ve düzlem–yatak ölçüleri) ve komşu standart G
+  sınıflarıyla (bir alt, iki üst) bilgi amaçlı karşılaştırma tablosu (raporda da yer alır).
 * **Mühendislik detayları (akordeon):** kütle merkezi entegrasyon tablosu, eksenel moment
   dengesi / yatak yükleri, ISO 21940-11 formül adımları, yatak payları, düzlem transferi ve
   ham parametreler.
+
+### Sayı biçimi
+
+Ondalık ayırıcı nokta, binlik ayırıcı üst tırnaktır: `45'000 rpm`, `2'470.0 g`, `0.0765 g·mm`.
+
+### Balans hızı
+
+Balans hızı toleransı **etkilemez**; ISO 21940-11'e göre U_per servis (operasyon) hızıyla hesaplanır.
+Balans hızı yalnızca referans olarak ekranda küçük bir notta ve raporun geometri bölümünde yer alır.
 
 ### Hız ve G mirası
 

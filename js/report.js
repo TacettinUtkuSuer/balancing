@@ -118,7 +118,7 @@ const LABEL = [51, 65, 85]; // önemli etiketler (baskıda okunur kalsın)
     let y = 46;
     section("Tip verisi ve hızlı bakış", y);
     y += 4;
-    const topH = 60;
+    const topH = 54;
     // Sol: temsil görseli + tip adı
     const leftW = 58;
     box(M, y, leftW, topH, [255, 255, 255]);
@@ -136,7 +136,7 @@ const LABEL = [51, 65, 85]; // önemli etiketler (baskıda okunur kalsın)
     const schX = M + leftW + 4;
     const schW = CW - leftW - 4;
     box(schX, y, schW, topH, [255, 255, 255]);
-    const sch = S.build(state, { process: p, result: r, w: 540, h: 265, print: true });
+    const sch = S.build(state, { process: p, result: r, w: 540, h: 240, print: true });
     S.toPDF(doc, sch, schX + 1.5, y + 1.5, schW - 3, topH - 3, font.name);
     y += topH + 4;
 
@@ -148,9 +148,9 @@ const LABEL = [51, 65, 85]; // önemli etiketler (baskıda okunur kalsın)
       let lines = reason ? doc.splitTextToSize(T(reason), CW) : [];
       if (lines.length > 3) lines = [...lines.slice(0, 2), fit(lines.slice(2).join(" "), CW, 8)];
       doc.setTextColor(...MUTED);
-      lines.forEach((l, i) => doc.text(l, M, y + 3 + i * 3.6));
+      lines.forEach((l, i) => doc.text(l, M, y + 3 + i * 3.4));
     }
-    y += 14;
+    y += 11;
 
     // ---------------- Tolerans kutuları (g ve g·mm)
     const tolH = 34;
@@ -162,9 +162,12 @@ const LABEL = [51, 65, 85]; // önemli etiketler (baskıda okunur kalsın)
         const bx = M + i * (bw + gap);
         box(bx, y, bw, tolH, ACCENT_BG, ACCENT, 0.9);
         txt(n === 1 ? "DÜZLEM (STATİK)" : `DÜZLEM ${i + 1}`, bx + 4, y + 5.5, { size: 8.5, bold: true, color: ACCENT });
-        txt(fit(`${pl.point.name} · ${pl.part.name} · r = ${f(pl.r, 1)} mm`, bw - 8, 7.5), bx + 4, y + 9.5, { size: 7.5, color: LABEL });
-        const near = pl.nearDist < 0.05 ? `${pl.nearBearing.name} üzerinde` : `${pl.nearBearing.name} → ${f(pl.nearDist, 1)} mm · ${pl.nearSide}`;
-        txt(fit(near, bw - 8, 8.5, true), bx + 4, y + 13.8, { size: 8.5, bold: true });
+        txt(fit(`${pl.point.name} · ${pl.part.name}`, bw - 8, 7.5), bx + 4, y + 9.5, { size: 7.5, color: LABEL });
+        const rLbl = `Yarıçap r${n === 1 ? "" : i + 1} = `;
+        txt(rLbl, bx + 4, y + 14.5, { size: 10, color: LABEL });
+        doc.setFont(font.name, "normal");
+        doc.setFontSize(10);
+        txt(`${f(pl.r, 1)} mm`, bx + 4 + doc.getTextWidth(T(rLbl)), y + 14.5, { size: 10.5, bold: true });
         const mp = C.massParts(pl.m);
         txt(mp.v, bx + 4, y + 25, { size: 26, bold: true });
         doc.setFont(font.name, "bold");
@@ -190,24 +193,23 @@ const LABEL = [51, 65, 85]; // önemli etiketler (baskıda okunur kalsın)
     }
     y += tolH + 4;
 
-    // ---------------- Hız şeridi
+    // ---------------- Ana parametreler (kütle ve G vurgulu; balans hızı yalnızca referans)
     const pr = r.params;
     const src = (k) => (pr.sources[k] === "process" ? "prosese özel" : "genel");
     const chips = [
-      ["Balans hızı", `${f(pr.balanceSpeed, 0)} rpm`, src("balanceSpeed")],
-      ["Servis hızı", `${f(pr.serviceSpeed, 0)} rpm`, src("serviceSpeed")],
-      ["Kalite sınıfı", `G ${fa(pr.G, 2)}`, src("G")],
-      ["Rotor kütlesi", `${f(r.mass, 1)} g`, `X_cg = ${f(r.xcg, 1)} mm`],
+      ["Rotor kütlesi", `${f(r.mass, 1)} g`, `X_cg = ${f(r.xcg, 1)} mm`, true],
+      ["Kalite sınıfı", `G ${fa(pr.G, 2)}`, src("G"), true],
+      ["Servis hızı", `${f(pr.serviceSpeed, 0)} rpm`, src("serviceSpeed"), false],
     ];
-    const cw = (CW - 3 * 3) / 4;
-    chips.forEach(([k, v, s], i) => {
+    const cw = (CW - 2 * 3) / 3;
+    chips.forEach(([k, v, s, strong], i) => {
       const bx = M + i * (cw + 3);
-      box(bx, y, cw, 12, [248, 250, 252]);
-      txt(k, bx + 3, y + 4.2, { size: 7, color: LABEL });
-      txt(v, bx + 3, y + 9.6, { size: 10.5, bold: true });
-      txt(fit(s, cw / 2 - 3, 6.5), bx + cw - 3, y + 4.2, { size: 6.5, color: MUTED, align: "right" });
+      box(bx, y, cw, 13, strong ? [255, 255, 255] : [248, 250, 252], strong ? [96, 125, 139] : LINE, strong ? 0.6 : 0.3);
+      txt(k, bx + 3, y + 4.4, { size: 7.5, color: LABEL, bold: strong });
+      txt(v, bx + 3, y + 10.6, { size: strong ? 13 : 11, bold: true });
+      txt(fit(s, cw / 2 - 3, 6.5), bx + cw - 3, y + 4.4, { size: 6.5, color: MUTED, align: "right" });
     });
-    y += 12 + 7;
+    y += 13 + 6;
 
     // ---------------- Balans geometrisi + ISO 21940-11 hesabı
     const colW = CW / 2;
@@ -226,12 +228,13 @@ const LABEL = [51, 65, 85]; // önemli etiketler (baskıda okunur kalsın)
             pl.nearDist < 0.05 ? "yatak üzerinde" : `${f(pl.nearDist, 1)} mm · ${pl.nearSide}`,
             true,
           ]),
-          ...r.planes.map((pl, i) => [`Yarıçap ${r.nPlanes === 1 ? "" : i + 1}`.trim(), `${f(pl.r, 1)} mm`]),
+          ...r.planes.map((pl, i) => [`Yarıçap r${r.nPlanes === 1 ? "" : i + 1}`, `${f(pl.r, 1)} mm`, true]),
+          ["Balans hızı (referans)", `${f(pr.balanceSpeed, 0)} rpm · ${src("balanceSpeed")}`, false, true],
         ]
       : [["Geometri", "eksik tanım"]];
-    geo.forEach(([k, v, bold], i) => {
-      txt(fit(k, 42, 8.5), M + 4, y + i * 4.3, { size: 8.5, color: LABEL });
-      txt(fit(v, colW - 52, 8.5, bold), M + 48, y + i * 4.3, { size: 8.5, bold });
+    geo.forEach(([k, v, bold, minor], i) => {
+      txt(fit(k, 42, 8.5), M + 4, y + i * 4, { size: 8.5, color: minor ? MUTED : LABEL });
+      txt(fit(v, colW - 52, 8.5, bold), M + 48, y + i * 4, { size: 8.5, bold, color: minor ? MUTED : INK });
     });
     const iso = r.valid
       ? [
@@ -245,10 +248,49 @@ const LABEL = [51, 65, 85]; // önemli etiketler (baskıda okunur kalsın)
         ]
       : [["Durum", "hesap yapılamadı"]];
     iso.forEach(([k, v], i) => {
-      txt(k, M + colW + 4, y + i * 4.3, { size: 8.5, color: LABEL });
-      txt(fit(v, colW - 46, 8.5, i >= 6), M + colW + 42, y + i * 4.3, { size: 8.5, bold: i >= 6 });
+      const bold = /^(Dinamik|Balans kalite|Rotor kütlesi)/.test(k);
+      txt(k, M + colW + 4, y + i * 4, { size: 8.5, color: LABEL });
+      txt(fit(v, colW - 46, 8.5, bold), M + colW + 42, y + i * 4, { size: 8.5, bold });
     });
-    y += Math.max(geo.length, iso.length) * 4.3 + 3;
+    y += Math.max(geo.length, iso.length) * 4 + 3;
+
+    // ---------------- Komşu standart G sınıfları (bilgi amaçlı)
+    const grades = C.gradeComparison(r);
+    if (grades.length) {
+      txt("Komşu standart G sınıfları", M, y, { size: 11 });
+      txt("bilgi amaçlı · seçili G vurgulu", PAGE_W - M, y, { size: 7, color: MUTED, align: "right" });
+      hline(y + 1.2, M, PAGE_W - M, 0.25);
+      y += 2.5;
+      const gh = 3.8;
+      const gcols = [42, 30, ...r.planes.map(() => (CW - 72) / r.planes.length)];
+      const ghead = ["Sınıf", "U_per [g·mm]", ...r.planes.map((_, i) => (r.nPlanes === 1 ? "Düzlem" : `D${i + 1}  (mg · g·mm)`))];
+      doc.setFillColor(236, 240, 244);
+      doc.rect(M, y, CW, gh, "F");
+      let gx = M;
+      ghead.forEach((h, j) => {
+        txt(h, j === 0 ? gx + 1.5 : gx + gcols[j] - 1.5, y + gh - 1.1, { size: 7.5, bold: true, color: LABEL, align: j === 0 ? "left" : "right" });
+        gx += gcols[j];
+      });
+      y += gh;
+      grades.forEach((g) => {
+        if (g.current) {
+          doc.setFillColor(...ACCENT_BG);
+          doc.rect(M, y, CW, gh, "F");
+        }
+        const tag = g.current ? `  (seçili${g.standard ? "" : " · standart dışı"})` : "";
+        const vals = [`G ${fa(g.G, 2)}${tag}`, fa(g.Uper), ...g.planes.map((x) => `${C.fmtMass(x.m)} · ${fa(x.U)}`)];
+        let cx3 = M;
+        vals.forEach((v, j) => {
+          txt(fit(v, gcols[j] - 3, 8, g.current), j === 0 ? cx3 + 1.5 : cx3 + gcols[j] - 1.5, y + gh - 1.1, {
+            size: 8, bold: g.current, color: g.current ? (j === 0 ? ACCENT : INK) : LABEL, align: j === 0 ? "left" : "right",
+          });
+          cx3 += gcols[j];
+        });
+        y += gh;
+      });
+      hline(y, M, PAGE_W - M, 0.25, LINE);
+      y += 5.5;
+    }
 
     // ---------------- Kompakt detay tablosu (kalan alana sığdırılır)
     const footerY = PAGE_H - 12;

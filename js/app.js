@@ -267,13 +267,13 @@
   function renderSummary(p, r) {
     const pr = r.params;
     const kpis = `<div class="kpis">
-      <div class="kpi">Balans hızı <b>${C.fmt(pr.balanceSpeed, 0)}</b> rpm ${srcBadge(pr.sources.balanceSpeed)}</div>
+      <div class="kpi strong">Rotor kütlesi <b>${C.fmt(r.mass, 1)}</b> g</div>
+      <div class="kpi strong">Kalite <b>G ${C.fmtAuto(pr.G, 2)}</b> ${srcBadge(pr.sources.G)}</div>
       <div class="kpi">Servis hızı <b>${C.fmt(pr.serviceSpeed, 0)}</b> rpm ${srcBadge(pr.sources.serviceSpeed)}</div>
-      <div class="kpi">Kalite <b>G ${C.fmtAuto(pr.G, 2)}</b> ${srcBadge(pr.sources.G)}</div>
-      <div class="kpi">Kütle <b>${C.fmt(r.mass, 1)}</b> g</div>
       <div class="kpi">X<sub>cg</sub> <b>${C.fmt(r.xcg, 1)}</b> mm</div>
       ${r.valid ? `<div class="kpi">U<sub>per</sub> toplam <b>${C.fmtAuto(r.Uper)}</b> g·mm</div>` : ""}
-    </div>`;
+    </div>
+    <div class="ref-note">Balans hızı (referans, toleransı etkilemez): ${C.fmt(pr.balanceSpeed, 0)} rpm · ${pr.sources.balanceSpeed === "process" ? "prosese özel" : "genel"}</div>`;
     const schem = `<div class="schem-box">${S.toSVG(S.build(state, { process: p, result: r, h: 260 }))}</div>`;
     const warn = r.warnings.length ? `<div class="alert warn">${r.warnings.map(esc).join("<br>")}</div>` : "";
     if (!r.valid) {
@@ -283,8 +283,8 @@
       .map(
         (pl, i) => `<div class="tol">
           <div class="lbl">${r.nPlanes === 1 ? "Düzlem (statik)" : `Düzlem ${i + 1}`}</div>
-          <div class="where">${esc(pl.point.name)} · ${esc(pl.part.name)} · r = ${C.fmt(pl.r, 1)} mm</div>
-          <div class="near">${nearText(pl)}</div>
+          <div class="where">${esc(pl.point.name)} · ${esc(pl.part.name)}</div>
+          <div class="rad">Yarıçap r${r.nPlanes === 1 ? "" : i + 1} = <b>${C.fmt(pl.r, 1)} mm</b></div>
           <div class="big">${C.massParts(pl.m).v}<small>${C.massParts(pl.m).unit}</small></div>
           <div class="mid">${C.fmtAuto(pl.U)} <small>g·mm</small></div>
         </div>`
@@ -309,12 +309,6 @@
       </div>`;
   }
 
-  /** Düzlemin en yakın yatağa mesafesi, ör. "Sol Yatak'tan 38,0 mm · dışarıda". */
-  function nearText(pl) {
-    if (pl.nearDist < 0.05) return `${esc(pl.nearBearing.name)} üzerinde`;
-    return `${esc(pl.nearBearing.name)} → <b>${C.fmt(pl.nearDist, 1)} mm</b> · ${pl.nearSide}`;
-  }
-
   /** Komşu standart G sınıfları (bilgi amaçlı, sade tablo). */
   function renderGradeCompare(r) {
     const rows = C.gradeComparison(r);
@@ -323,7 +317,7 @@
     const body = rows
       .map(
         (row) => `<tr class="${row.current ? "cur" : ""}">
-          <td>G ${C.fmtAuto(row.G, 2)}${row.current ? ` <span class="hint">(seçili${row.standard ? "" : ", standart dışı"})</span>` : ""}</td>
+          <td>G ${C.fmtAuto(row.G, 2)}${row.current ? ` <span class="sel-tag">seçili${row.standard ? "" : " · standart dışı"}</span>` : ""}</td>
           <td>${C.fmtAuto(row.Uper)}</td>
           ${row.planes.map((x) => `<td>${C.fmtMass(x.m)} <span class="hint">· ${C.fmtAuto(x.U)} g·mm</span></td>`).join("")}
         </tr>`
