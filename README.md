@@ -86,6 +86,13 @@ kütleyi gösteren tek tablo. Sayfa düzeni referans
 hesabı** → kompakt parça / yatak tablosu. Tablo kalan alana sığdırılır (gerekirse yazı küçültülür,
 taşan satırlar "… ve N parça daha" olarak özetlenir); böylece her proses daima **tam 1 sayfadır**.
 
+### Yazdırma
+
+Raporda hiçbir çizim sayfa kenarına **10 mm**'den fazla yaklaşmaz. Çoğu yazıcının basamadığı
+kenar bölgesi 4–6 mm olduğundan çerçeve, şerit ve alt bilgi kesilmeden basılır. En iyi sonuç için
+yazdırma penceresinde ölçeği **Gerçek boyut / %100** seçin; "Sayfaya sığdır" seçeneği sayfayı
+gereksiz yere küçültebilir.
+
 ## Hesap yöntemi
 
 Birimler: kütle g, uzunluk mm, hız rpm, G mm/s.

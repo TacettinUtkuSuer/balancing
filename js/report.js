@@ -10,7 +10,10 @@
 
   const PAGE_W = 210;
   const PAGE_H = 297;
-  const M = 14; // kenar boşluğu
+  const M = 14; // içerik kenar boşluğu
+  // Yazıcıların basamadığı kenar bölgesi (~4–6 mm) için güvenli sınır: hiçbir çizim kenara
+  // bundan daha fazla yaklaşmaz.
+  const SAFE = 10;
   const CW = PAGE_W - 2 * M;
   const INK = [31, 42, 51];
   const MUTED = [100, 116, 139]; // ikincil bilgiler
@@ -131,7 +134,7 @@
     const g = state.global;
 
     // Kapak çerçevesi ve başlık bandı
-    const FX = 8;
+    const FX = SAFE;
     const FW = PAGE_W - 2 * FX;
     const bandH = 40;
     doc.setFillColor(...CHAR);
@@ -226,7 +229,7 @@
       { h: "Toplam kütle", w: 34, a: "right" },
     ];
     const rowH = 7;
-    const footerY = PAGE_H - 19; // kapak çerçevesinin içinde
+    const footerY = PAGE_H - SAFE - 11; // kapak çerçevesinin içinde
     const bottom = footerY - 30; // okuma rehberi için yer
     doc.setFillColor(236, 240, 244);
     doc.rect(M, y, CW, 6, "F");
@@ -311,16 +314,16 @@
       doc.setDrawColor(...CHAR);
       doc.setLineWidth(0.6);
       doc.setLineDashPattern([3, 2], 0);
-      doc.roundedRect(4, 4, PAGE_W - 8, PAGE_H - 4 - 2.2, 2.5, 2.5, "S"); // alt bilginin dışında
+      doc.roundedRect(SAFE, SAFE, PAGE_W - 2 * SAFE, PAGE_H - 2 * SAFE, 2.5, 2.5, "S");
       doc.setLineDashPattern([], 0);
       doc.setFillColor(...YELLOW_SOFT);
-      doc.rect(7.2, 40, 5.2, PAGE_H - 80, "F");
+      doc.rect(SAFE + 0.8, 40, 2.9, PAGE_H - 80, "F");
       doc.setFillColor(...YELLOW);
-      doc.rect(7.2, 40, 0.9, PAGE_H - 80, "F");
+      doc.rect(SAFE + 0.8, 40, 0.6, PAGE_H - 80, "F");
       doc.setFont(font.name, "bold");
-      doc.setFontSize(8);
+      doc.setFontSize(6.5);
       doc.setTextColor(...CHAR);
-      for (let ty = PAGE_H - 48; ty > 60; ty -= 72) doc.text(T("OPSİYONEL ADIM"), 11.2, ty, { angle: 90 });
+      for (let ty = PAGE_H - 48; ty > 60; ty -= 72) doc.text(T("OPSİYONEL ADIM"), SAFE + 3.4, ty, { angle: 90 });
     }
     txt(`Proses ${stepNo} / ${stepTotal}`, PAGE_W - M, 20, { size: 9, color: MUTED, align: "right" });
     hline(23, M, PAGE_W - M, 0.6);
@@ -533,7 +536,7 @@
     }
 
     // ---------------- Kompakt detay tablosu (kalan alana sığdırılır)
-    const footerY = PAGE_H - 12;
+    const footerY = PAGE_H - SAFE - 9; // alt bilgi yazıları güvenli sınırın içinde
     // Tespit gerekçesi (ikincil bilgi) sayfanın altında; not varsa yer açmak için atlanır
     let reasonLines = [];
     if (r.valid && !note) {
@@ -542,8 +545,12 @@
       reasonLines = doc.splitTextToSize(T(`Tespit gerekçesi: ${r.type.reason}`), CW);
       if (reasonLines.length > 2) reasonLines = [reasonLines[0], fit(reasonLines.slice(1).join(" "), CW, 7.2)];
     }
+    // Montajdaki parçalara sığacak yer yoksa ikincil bilgi olan gerekçe raporda atlanır
+    const onCount = state.parts.filter((pt) => p.partIds.includes(pt.id)).length;
+    const bottomFor = (lines) => (lines.length ? footerY - 2.2 - (lines.length - 1) * 3.1 - 4 : footerY) - 10;
+    if (reasonLines.length && bottomFor(reasonLines) - (y + 3.5) < (onCount + 1) * 3.6) reasonLines = [];
     const reasonY = footerY - 2.2 - (reasonLines.length - 1) * 3.1;
-    const tableBottom = (reasonLines.length ? reasonY - 4 : footerY) - 10; // yatak satırı için yer
+    const tableBottom = bottomFor(reasonLines); // yatak satırı için yer
     txt("Parça listesi ve referans yataklar", M, y, { size: 11 });
     hline(y + 1.2, M, PAGE_W - M, 0.25);
     y += 3.5;
@@ -572,16 +579,17 @@
     const avail = tableBottom - y;
     let size = 8;
     let rowH = 4.4;
-    let maxRows = Math.floor((avail - rowH) / rowH);
+    let maxRows = Math.max(0, Math.floor((avail - rowH) / rowH));
     if (rows.length > maxRows) {
       size = 6.8;
       rowH = 3.6;
-      maxRows = Math.floor((avail - rowH) / rowH);
+      maxRows = Math.max(1, Math.floor((avail - rowH) / rowH));
     }
     let shown = rows;
     let hidden = 0;
     if (rows.length > maxRows) {
-      shown = rows.slice(0, maxRows - 1);
+      // son satır "… ve N parça daha" özetine ayrılır; asla sayfa dışına taşmaz
+      shown = rows.slice(0, Math.max(0, maxRows - 1));
       hidden = rows.length - shown.length;
     }
     doc.setFillColor(236, 240, 244);
