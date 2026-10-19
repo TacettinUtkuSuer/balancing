@@ -130,7 +130,7 @@
     const dateStr = new Date().toLocaleString("tr-TR", { dateStyle: "short", timeStyle: "short" });
     const R = procs.map((p) => ({ p, r: C.computeProcess(state, p) }));
     const nOpt = procs.filter((p) => p.optional).length;
-    const rotorName = m.rotorId || "şaft";
+    const rotorName = m.rotorId ? `“${m.rotorId}”` : "ilgili şaft";
     const g = state.global;
 
     // Kapak çerçevesi ve başlık bandı
@@ -189,7 +189,7 @@
     }
 
     // Ne yapılacak?
-    section("Bu doküman ne anlatıyor?", y);
+    section("1.  Amaç ve Kapsam", y);
     y += 7;
     const para = (text, size = 10) => {
       doc.setFont(font.name, "normal");
@@ -200,27 +200,22 @@
       y += lines.length * size * 0.45 + 2.5;
     };
     para(
-      `Bu doküman, ${rotorName} için montaj sırasında uygulanacak balans işlemlerini özetler. ` +
-        `Rotor tek seferde değil, ${procs.length} adımda balanslanır: her adımda o ana kadar takılmış parçalarla ` +
-        `birlikte balans alınır ve kalan dengesizlik izin verilen sınırın altına indirilir. ` +
-        `Böylece her yeni parça takıldığında rotor dengeli kalır.`
+      `Bu talimatname, ${rotorName} için montaj sürecinde uygulanacak kademeli balans işlemlerini tanımlar. ` +
+        `Balans ${procs.length} adımda gerçekleştirilir; her adımda o aşamaya kadar monte edilmiş parçalar ` +
+        `birlikte balanslanır ve artık dengesizlik izin verilen değerin altına indirilir.`
     );
     para(
-      `İzin verilen sınırlar ISO 21940-11 standardına göre, rotorun kütlesi, çalışma hızı ve istenen ` +
-        `balans kalitesinden (G sınıfı) hesaplanır. Operatör için sonuç, her düzeltme düzleminde ` +
-        `bırakılabilecek en fazla artık kütledir (mg / g).`
+      `İzin verilen artık dengesizlik, ISO 21940-11 uyarınca rotor kütlesi, servis hızı ve balans kalite ` +
+        `sınıfına (G) göre hesaplanmıştır. Düzeltme düzlemi başına izin verilen artık kütle (mg / g) ilgili ` +
+        `talimat sayfasında verilmiştir.`
     );
-    if (nOpt)
-      para(
-        `${nOpt === 1 ? "Bir adım" : `${nOpt} adım`} opsiyonel olarak işaretlenmiştir: bu adımların yapılması ` +
-          `tercihe bağlıdır; gerekli görülmezse atlanabilir.`
-      );
+    if (nOpt) para(`“Opsiyonel” olarak işaretlenen ${nOpt} adımın uygulanması isteğe bağlıdır.`);
 
     // Ürün: tam genişlikte rotor şeması + nominal hız
     y += 2;
-    section("Rotor", y);
+    section("2.  Rotor", y);
     y += 4;
-    const schH = 62;
+    const schH = procs.length > 6 ? 46 : 54;
     box(M, y, CW, schH, [255, 255, 255]);
     S.toPDF(doc, S.build(state, { w: Math.round((240 * (CW - 3)) / (schH - 3)), h: 240, print: true }), M + 1.5, y + 1.5, CW - 3, schH - 3, font.name);
     y += schH + 5;
@@ -231,7 +226,7 @@
     y += 9;
 
     // Adımlar
-    section("Proses adımları", y);
+    section("3.  Proses Adımları", y);
     y += 4;
     const cols = [
       { h: "Adım", w: 24, a: "left" },
@@ -284,26 +279,29 @@
       y += rowH;
     });
     if (shown.length < R.length) {
-      txt(`… ve ${R.length - shown.length} adım daha (ayrıntılar sonraki sayfalarda)`, M + 2, y + 4.8, { size: 8.5, color: MUTED });
+      txt(`… ve ${R.length - shown.length} adım daha (bkz. talimat sayfaları)`, M + 2, y + 4.8, { size: 8.5, color: MUTED });
       y += rowH;
     }
     hline(y, M, PAGE_W - M, 0.25, LINE);
     if (nOpt) {
       const pw = pill(M + 2, y + 4.4, "OPSİYONEL", CHAR, [255, 255, 255], 6.5);
-      txt("kesikli çerçeveli satırlar opsiyonel adımlardır; yapılması tercihe bağlıdır.", M + 4 + pw, y + 4.4, { size: 7.5, color: LABEL });
+      txt("Kesikli çerçeveli satırlar opsiyonel adımlardır; uygulanması isteğe bağlıdır.", M + 4 + pw, y + 4.4, { size: 7.5, color: LABEL });
       y += 4;
     }
 
-    // Okuma rehberi
+    // Doküman yapısı
     y += 10;
-    txt("Sonraki sayfalarda", M, y, { size: 11 });
-    hline(y + 1.2, M, PAGE_W - M, 0.25);
+    section("4.  Doküman Yapısı", y);
+    y += 0.5;
     [
-      "Her proses adımı için ayrı bir sayfa: rotor tipi, şema ve her düzlem için izin verilen artık kütle ile dengesizlik.",
-      "Balans geometrisi: yataktan yatağa ve yataktan düzleme mesafeler, düzeltme yarıçapları.",
-      "ISO 21940-11 hesap özeti ve komşu standart G sınıflarıyla karşılaştırma.",
-      "Proses notları ilgili adımın sayfasında, başlığın hemen altında yer alır.",
-    ].forEach((l, i) => txt(fit(`•  ${l}`, CW, 8.5), M + 2, y + 6 + i * 4.6, { size: 8.5, color: LABEL }));
+      "Talimat sayfaları – her proses adımı için rotor tipi, şema, düzlem başına izin verilen artık kütle ve dengesizlik.",
+      "Balans geometrisi – yatak açıklığı, yatak–düzlem mesafeleri ve düzeltme yarıçapları.",
+      "Hesap özeti – ISO 21940-11 hesabı ve komşu standart G sınıflarıyla karşılaştırma.",
+      "Proses notları – ilgili talimat sayfasında, başlık bilgilerinin altında.",
+    ].forEach((l, i) => {
+      // alt bilgiye taşacak satırlar basılmaz
+      if (y + 6 + i * 4.6 < footerY - 3) txt(fit(`•  ${l}`, CW, 8.5), M + 2, y + 6 + i * 4.6, { size: 8.5, color: LABEL });
+    });
 
     hline(footerY, M, PAGE_W - M, 0.3, LINE);
     txt(fit(`Hazırlayan / Operatör: ${m.operator || "................................"}     Kontrol: ................................     ${m.notes || ""}`, CW - 30, 7.5), M, footerY + 4, { size: 7.5, color: MUTED });
@@ -341,7 +339,7 @@
       doc.setFontSize(22);
       const tw = doc.getTextWidth(T("Balans Talimatı"));
       const pw = pill(M + tw + 5, 19.3, "OPSİYONEL ADIM", CHAR, [255, 255, 255], 11);
-      txt("yapılması tercihe bağlıdır", M + tw + 7 + pw, 19.3, { size: 8.5, bold: true, color: CHAR });
+      txt("uygulanması isteğe bağlıdır", M + tw + 7 + pw, 19.3, { size: 8.5, bold: true, color: CHAR });
       doc.setDrawColor(...CHAR);
       doc.setLineWidth(0.6);
       doc.setLineDashPattern([3, 2], 0);
