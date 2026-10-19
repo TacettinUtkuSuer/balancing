@@ -41,7 +41,7 @@ Her proses kartı iki katmanlıdır:
 
 * **Doküman bilgileri** (Rotor tanımı bölümünde): *SAT / SAS Kodu*, *Şaft Adı*, *Tanım* (aynı
   geometrideki varyantı ayırt eden kısa açıklama, ör. çelik / alüminyum gövde), *Hazırlayan /
-  Operatör* ve *Not*. Talimatnamede *Hazırlanma Tarihi* otomatik basılır; *Balans Tarihi* her
+  Operatör* ve *Not*. Talimatnamede *Hazırlanma Tarihi* otomatik basılır; *Balans Tarihi* kapakta ve her
   adım sayfasında elle doldurulmak üzere boş bırakılır.
 * **Başlık** (Doküman bilgileri): tüm iş için tek metin; kapak sayfasının
   başlık bandında büyük olarak gösterilir.
@@ -95,9 +95,10 @@ taşan satırlar "… ve N parça daha" olarak özetlenir); böylece her proses 
 
 ### Sayfaya sığdırma önceliği
 
-Her proses tek sayfadır. Yer daraldığında (uzun not, çok parça) sırasıyla: tespit gerekçesi raporda
-atlanır, komşu G tablosu tek satırlık kompakt gösterime iner, montaj dışı parçalar "… ve N parça
-daha" satırında özetlenir. Montajdaki parçalar önceliklidir.
+Her proses tek sayfadır. Komşu standart G sınıfları her zaman tablo olarak basılır. Tespit
+gerekçesi raporda yer almaz (ekranda ve mühendislik detaylarında görünür). Yer daraldığında
+(uzun not, çok parça) parça tablosunda önce montaj dışı parçalar listeden çıkarılır; kaç parçanın
+listelenmediği tablo başlığının yanında belirtilir. Montajdaki parçalar önceliklidir.
 
 ### Yazdırma
 
