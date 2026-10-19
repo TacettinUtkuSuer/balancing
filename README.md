@@ -29,7 +29,7 @@ Her proses kartı iki katmanlıdır:
 
 * **Operatör paneli (ilk bakış):** otomatik rotor tipi + temsil görseli, tespit gerekçesi,
   her düzlem için büyük **gram / mg** ve **g·mm** tolerans kutuları (yarıçap r ile), öne çıkarılmış
-  **rotor kütlesi** ve **G sınıfı**, servis hızı, canlı şema (yatak açıklığı L ve düzlem–yatak ölçüleri) ve komşu standart G
+  **rotor kütlesi** ve **G sınıfı**, servis hızı, canlı şema ("yataktan yatağa" ve "yataktan D1/D2" ölçüleri, düzlem altında r1/r2) ve komşu standart G
   sınıflarıyla (bir alt, iki üst) bilgi amaçlı karşılaştırma tablosu (raporda da yer alır).
 * **Mühendislik detayları (akordeon):** kütle merkezi entegrasyon tablosu, eksenel moment
   dengesi / yatak yükleri, ISO 21940-11 formül adımları, yatak payları, düzlem transferi ve
@@ -59,7 +59,10 @@ hesaplanır). *JSON içe aktar* projeyi eksiksiz geri yükler. Örnek: [`example
 
 ### PDF
 
-*PDF raporu* (tek proses) veya *Tüm raporlar* (her proses bir sayfa). Sayfa düzeni referans
+*PDF raporu* (tek proses) veya *Tüm raporlar* (her proses bir sayfa). *Tüm raporlar* çıktısının ilk
+sayfası **Balans Proses Özeti**dir: ürünün ve yapılacak işin sade bir tanımı (sabit şablon metin),
+rotor şeması ve her adım için montajdaki parçalar, düzlem sayısı / rotor tipi ve izin verilen artık
+kütleyi gösteren tek tablo. Sayfa düzeni referans
 "Balancing report" şablonunu izler: başlık bilgileri → tip verisi ve hızlı bakış (temsil görseli,
 şema) → g / g·mm tolerans kutuları → hız şeridi → **balans geometrisi** (L ve her düzlemin en yakın yatağa mesafesi) ve **DIN ISO 21940-11
 hesabı** → kompakt parça / yatak tablosu. Tablo kalan alana sığdırılır (gerekirse yazı küçültülür,
