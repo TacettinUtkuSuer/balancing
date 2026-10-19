@@ -42,8 +42,8 @@ Her proses kartı iki katmanlıdır:
 * **Opsiyonel** anahtarı (proses kartının başlığında): adım tercihe bağlı olarak işaretlenir ve
   her yerde zorunlu adımlardan ayrışır: arayüzde kesikli çerçeveli kart ve çizgili liste satırı,
   koyu "OPSİYONEL" rozeti; raporda başlıkta koyu "OPSİYONEL ADIM" rozeti, kesikli sayfa çerçevesi,
-  sol kenarda dikey "OPSİYONEL ADIM" şeridi, kesikli tolerans kutuları; özet tablosunda kesikli
-  çerçeveli satır ve rozet.
+  şemanın üstündeki bölümde açık renkli zemin (sayfanın geri kalanı beyaz; toner tasarrufu),
+  kesikli tolerans kutuları; özet tablosunda kesikli çerçeveli satır ve rozet.
 * **Proses notu** (Proses ayarları): raporda o prosesin sayfasında, başlığın hemen altında
   sarı bir kutuda gösterilir (en fazla 3 satır). Not varsa sayfaya sığması için tespit
   gerekçesi raporda atlanır; ekranda ve mühendislik detaylarında görünmeye devam eder.
@@ -85,6 +85,12 @@ kütleyi gösteren tek tablo. Sayfa düzeni referans
 şema) → g / g·mm tolerans kutuları → hız şeridi → **balans geometrisi** (L ve her düzlemin en yakın yatağa mesafesi) ve **DIN ISO 21940-11
 hesabı** → kompakt parça / yatak tablosu. Tablo kalan alana sığdırılır (gerekirse yazı küçültülür,
 taşan satırlar "… ve N parça daha" olarak özetlenir); böylece her proses daima **tam 1 sayfadır**.
+
+### Sayfaya sığdırma önceliği
+
+Her proses tek sayfadır. Yer daraldığında (uzun not, çok parça) sırasıyla: tespit gerekçesi raporda
+atlanır, komşu G tablosu tek satırlık kompakt gösterime iner, montaj dışı parçalar "… ve N parça
+daha" satırında özetlenir. Montajdaki parçalar önceliklidir.
 
 ### Yazdırma
 

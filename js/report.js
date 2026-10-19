@@ -302,10 +302,29 @@
   function drawPage(doc, font, state, p, r, stepNo, stepTotal, pageNo, pageCount) {
     const { T, f, fa, txt, fit, hline, section, box, kv, pill } = kit(doc, font);
 
+    // Proses notu ölçüsü (üst bölüm yerleşimi ve opsiyonel zemin için önceden hesaplanır)
+    const note = (p.note || "").trim();
+    let noteLines = [];
+    if (note) {
+      doc.setFont(font.name, "normal");
+      doc.setFontSize(9.5);
+      noteLines = doc.splitTextToSize(T(note), CW - 30);
+      if (noteLines.length > 3) noteLines = [...noteLines.slice(0, 2), fit(noteLines.slice(2).join(" "), CW - 30, 9.5)];
+    }
+    const noteH = note ? 4 + noteLines.length * 4.3 : 0;
+    const rowY = note ? 41.5 + noteH + 4.5 : 46; // üst sıranın (tip görseli + kutular) başladığı yer
+    const topRowH = note ? 34 : 38;
+
+    // Opsiyonel sayfa: yalnızca şemanın üstündeki bölüm açık renkli zeminle ayrılır (toner tasarrufu)
+    if (p.optional) {
+      doc.setFillColor(255, 248, 224);
+      doc.roundedRect(M - 3.5, SAFE + 2.5, CW + 7, rowY + topRowH + 2.5 - (SAFE + 2.5), 2.5, 2.5, "F");
+    }
+
     // ---------------- Başlık (şablon: "Balancing report")
     txt("Balans Raporu", M, 20, { size: 22 });
     if (p.optional) {
-      // Opsiyonel sayfa: belirgin koyu rozet, kesikli sayfa çerçevesi ve sol kenarda dikey şerit
+      // Opsiyonel sayfa: belirgin koyu rozet ve kesikli sayfa çerçevesi
       doc.setFont(font.name, "normal");
       doc.setFontSize(22);
       const tw = doc.getTextWidth(T("Balans Raporu"));
@@ -316,14 +335,6 @@
       doc.setLineDashPattern([3, 2], 0);
       doc.roundedRect(SAFE, SAFE, PAGE_W - 2 * SAFE, PAGE_H - 2 * SAFE, 2.5, 2.5, "S");
       doc.setLineDashPattern([], 0);
-      doc.setFillColor(...YELLOW_SOFT);
-      doc.rect(SAFE + 0.8, 40, 2.9, PAGE_H - 80, "F");
-      doc.setFillColor(...YELLOW);
-      doc.rect(SAFE + 0.8, 40, 0.6, PAGE_H - 80, "F");
-      doc.setFont(font.name, "bold");
-      doc.setFontSize(6.5);
-      doc.setTextColor(...CHAR);
-      for (let ty = PAGE_H - 48; ty > 60; ty -= 72) doc.text(T("OPSİYONEL ADIM"), SAFE + 3.4, ty, { angle: 90 });
     }
     txt(`Proses ${stepNo} / ${stepTotal}`, PAGE_W - M, 20, { size: 9, color: MUTED, align: "right" });
     hline(23, M, PAGE_W - M, 0.6);
@@ -348,27 +359,21 @@
     );
 
     // ---------------- Proses notu (varsa, başlığın hemen altında)
-    let y = 46;
-    const note = (p.note || "").trim();
+    let y = rowY;
     if (note) {
-      doc.setFont(font.name, "normal");
-      doc.setFontSize(9.5);
-      let lines = doc.splitTextToSize(T(note), CW - 30);
-      if (lines.length > 3) lines = [...lines.slice(0, 2), fit(lines.slice(2).join(" "), CW - 30, 9.5)];
-      const nh = 4 + lines.length * 4.3;
+      const lines = noteLines;
+      const nh = noteH;
       box(M, 41.5, CW, nh, NOTE_BG, NOTE_LINE, 0.5);
       txt("PROSES NOTU", M + 3, 46.3, { size: 8, bold: true, color: BLACK });
       doc.setFont(font.name, "normal");
       doc.setFontSize(9.5);
       doc.setTextColor(...INK);
       lines.forEach((l, i) => doc.text(l, M + 27, 46.3 + i * 4.3));
-      y = 41.5 + nh + 7;
     }
 
     // ---------------- Üst sıra: tip görseli + ana parametreler (kütle, G, hız)
     const pr = r.params;
     const src = (k) => (pr.sources[k] === "process" ? "prosese özel" : "genel");
-    const topRowH = note ? 34 : 38;
     const leftW = 62;
     box(M, y, leftW, topRowH, [255, 255, 255]);
     if (r.valid) {
@@ -499,7 +504,30 @@
 
     // ---------------- Komşu standart G sınıfları (bilgi amaçlı)
     const grades = C.gradeComparison(r);
-    if (grades.length) {
+    // Montajdaki parçaların tabloya sığması önceliklidir; sığmıyorsa G karşılaştırması tek satıra iner
+    const onParts = state.parts.filter((pt) => p.partIds.includes(pt.id)).length;
+    const partsNeed = 3.5 + 3.6 * (onParts + 1) + 11;
+    const fullGH = 2.5 + 3.8 * (grades.length + 1) + 5.5;
+    const compactG = grades.length && PAGE_H - SAFE - 9 - 10 - (y + fullGH) < partsNeed;
+    if (compactG) {
+      txt("Komşu standart G sınıfları", M, y, { size: 9.5 });
+      txt("bilgi amaçlı", PAGE_W - M, y, { size: 7, color: MUTED, align: "right" });
+      y += 4.2;
+      let gx = M;
+      grades.forEach((g) => {
+        const t = `G ${fa(g.G, 2)}${g.current ? " (seçili)" : ""}: ${g.planes.map((x) => C.fmtMass(x.m)).join(" / ")}`;
+        doc.setFont(font.name, g.current ? "bold" : "normal");
+        doc.setFontSize(8);
+        const w = doc.getTextWidth(T(t));
+        if (g.current) {
+          doc.setFillColor(...YELLOW_SOFT);
+          doc.rect(gx - 1, y - 3, w + 2, 4, "F");
+        }
+        txt(t, gx, y, { size: 8, bold: g.current, color: g.current ? BLACK : LABEL });
+        gx += w + 6;
+      });
+      y += 5.5;
+    } else if (grades.length) {
       txt("Komşu standart G sınıfları", M, y, { size: 11 });
       txt("bilgi amaçlı · seçili G vurgulu", PAGE_W - M, y, { size: 7, color: MUTED, align: "right" });
       hline(y + 1.2, M, PAGE_W - M, 0.25);
