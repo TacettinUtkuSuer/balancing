@@ -84,9 +84,10 @@ hesaplanır). *JSON içe aktar* projeyi eksiksiz geri yükler. Örnek: [`example
 ### PDF
 
 *Adım PDF* (tek proses) veya *Talimatname (PDF)* (her proses bir sayfa). Talimatname çıktısının ilk
-sayfası çerçeveli bir kapak / özet olan **Balans Proses Özeti**dir (başlık bandında proje başlığı): ürünün ve yapılacak işin sade bir tanımı (sabit şablon metin),
-rotor şeması ve her adım için montajdaki parçalar, düzlem sayısı / rotor tipi ve izin verilen artık
-kütleyi gösteren tek tablo. Sayfa düzeni referans
+sayfası çerçeveli **kapak**tır: başlık bandında yalnızca başlık; doküman bilgileri ve numaralı bölümler
+*1. Amaç ve Kapsam* (sabit şablon metin), *2. Rotor* (tam genişlik şema, nominal hız),
+*3. Proses Adımları* (adım, proses, düzlem sayısı, G, toplam kütle) ve *4. Doküman Yapısı*.
+Talimat sayfalarının düzeni referans
 "Balancing report" şablonunu izler: başlık bilgileri → tip verisi ve hızlı bakış (temsil görseli,
 şema) → g / g·mm tolerans kutuları → hız şeridi → **balans geometrisi** (L ve her düzlemin en yakın yatağa mesafesi) ve **DIN ISO 21940-11
 hesabı** → kompakt parça / yatak tablosu. Tablo kalan alana sığdırılır (gerekirse yazı küçültülür,
