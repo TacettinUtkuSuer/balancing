@@ -20,10 +20,12 @@ python3 -m http.server 8000   # → http://localhost:8000
 
 ## Kullanım
 
-| Sekme | İçerik |
+Uygulama tek bir ana ekrandan oluşur:
+
+| Bölüm | İçerik |
 |---|---|
-| **Rotor Tanımı** | Rapor bilgileri, genel hız / G parametreleri, parçalar (ad, kütle *m*, ağırlık merkezi *x*), her parçanın balans noktaları (*x*, *r*), yatak bölgeleri (*x*) ve canlı şema |
-| **Balans Prosesleri** | Montaj adımları. Her adım için parçalar, 2 referans yatak, 1 / 2 düzlem ve düzeltme noktaları seçilir |
+| **Rotor tanımı** (üstte, açılır / kapanır) | Kapalıyken proje başlığı ve özet bilgiler (parça, toplam kütle, yatak, servis hızı, G). *Düzenle* ile açılır: rapor bilgileri, genel hız / G parametreleri, parçalar (ad, kütle *m*, ağırlık merkezi *x*), her parçanın balans noktaları (*x*, *r*), yatak bölgeleri (*x*) ve canlı şema. Değişiklikler anında proseslere yansır. |
+| **Balans prosesleri** (ana bölüm) | Montaj adımları. Her adım için parçalar, 2 referans yatak, 1 / 2 düzlem ve düzeltme noktaları seçilir |
 
 Her proses kartı iki katmanlıdır:
 
@@ -37,7 +39,7 @@ Her proses kartı iki katmanlıdır:
 
 ### Proje başlığı, opsiyonel adımlar ve notlar
 
-* **Proje başlığı** (Rotor Tanımı → Rapor bilgileri): tüm iş için tek metin; özet sayfasının
+* **Proje başlığı** (Rotor tanımı → Rapor bilgileri): tüm iş için tek metin; özet sayfasının
   başlık bandında büyük olarak gösterilir.
 * **Opsiyonel** anahtarı (proses kartının başlığında): adım tercihe bağlı olarak işaretlenir ve
   her yerde zorunlu adımlardan ayrışır: arayüzde kesikli çerçeveli kart ve çizgili liste satırı,
@@ -51,7 +53,7 @@ Her proses kartı iki katmanlıdır:
 ### Renkler
 
 Arayüz ve rapor şirket renklerini kullanır: füme / siyah ana tonlar, sarı yalnızca ince vurgu
-(sekme alt çizgisi, kutu üst şeridi, seçili satır). Şemalar ve tip görselleri mavi kalır.
+(üst çubuk alt çizgisi, kutu üst şeritleri, seçili satır). Şemalar ve tip görselleri mavi kalır.
 
 ### Sayı biçimi
 

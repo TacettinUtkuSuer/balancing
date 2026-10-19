@@ -18,18 +18,15 @@
       </div>
     </div>
     <div class="actions">
-      <button type="button" class="btn ghost" data-action="new">Yeni</button>
-      <button type="button" class="btn ghost" data-action="example">Örnek yükle</button>
-      <label class="btn ghost file-btn">JSON içe aktar<input type="file" accept=".json,application/json" id="importFile" hidden /></label>
-      <button type="button" class="btn" data-action="export">JSON dışa aktar</button>
+      <div class="btn-group" role="group" aria-label="Proje">
+        <button type="button" class="btn" data-action="new">Yeni</button>
+        <button type="button" class="btn" data-action="example">Örnek</button>
+        <label class="btn file-btn">İçe aktar<input type="file" accept=".json,application/json" id="importFile" hidden /></label>
+        <button type="button" class="btn" data-action="export">Dışa aktar</button>
+      </div>
       <button type="button" class="btn primary" data-action="pdf-all">Tüm raporlar (PDF)</button>
     </div>
   </header>
-
-  <nav class="tabs" role="tablist">
-    <button type="button" role="tab" data-tab="processes">Balans Prosesleri</button>
-    <button type="button" role="tab" data-tab="definition">Rotor Tanımı</button>
-  </nav>
 
   <main id="app"></main>
 
