@@ -584,7 +584,7 @@ ABC: a = ${f(r.abc.a, 2)}, b = ${f(r.abc.b, 2)}, c = ${f(r.abc.c, 2)} mm</div>`;
         exportJSON();
         return;
       case "pdf-all":
-        makePDF(state.processes.map((x) => x.id));
+        makePDF(state.processes.map((x) => x.id), { summary: true });
         return;
       case "pdf-one":
         makePDF([p.id]);
@@ -721,10 +721,10 @@ ABC: a = ${f(r.abc.a, 2)}, b = ${f(r.abc.b, 2)}, c = ${f(r.abc.c, 2)} mm</div>`;
     rd.readAsText(file);
   }
 
-  function makePDF(ids) {
+  function makePDF(ids, opts = {}) {
     if (!ids.length) return toast("Rapor için proses yok.");
     try {
-      const doc = window.Report.generate(state, ids);
+      const doc = window.Report.generate(state, ids, opts);
       const suffix = ids.length === 1 ? `_${(findProc(ids[0]).name || "proses").replace(/[^\p{L}\p{N}_-]+/gu, "_")}` : "_tum_prosesler";
       doc.save(`${fileStamp()}${suffix}.pdf`);
     } catch (err) {

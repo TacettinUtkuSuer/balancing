@@ -14,7 +14,7 @@
   const CW = PAGE_W - 2 * M;
   const INK = [31, 42, 51];
   const MUTED = [100, 116, 139]; // ikincil bilgiler
-const LABEL = [51, 65, 85]; // önemli etiketler (baskıda okunur kalsın)
+  const LABEL = [51, 65, 85]; // önemli etiketler (baskıda okunur kalsın)
   const ACCENT = [13, 71, 161];
   const ACCENT_BG = [237, 245, 253];
   const LINE = [195, 202, 211];
@@ -33,22 +33,29 @@ const LABEL = [51, 65, 85]; // önemli etiketler (baskıda okunur kalsın)
     return { name: "helvetica", t: (s) => String(s ?? "").replace(/[şŞğĞıİ−≤≥…]/g, (c) => TRANSLIT[c]) };
   }
 
-  function generate(state, processIds) {
+  /**
+   * @param opts.summary  true ise ilk sayfa proses özeti olur (tüm raporlar çıktısı)
+   */
+  function generate(state, processIds, opts = {}) {
     const { jsPDF } = root.jspdf;
     const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait", compress: true });
     const font = setupFonts(doc);
     const procs = processIds.map((id) => state.processes.find((p) => p.id === id)).filter(Boolean);
     const total = state.processes.length;
+    const offset = opts.summary ? 1 : 0;
+    const pageCount = procs.length + offset;
+    if (opts.summary) drawSummary(doc, font, state, procs, pageCount);
     procs.forEach((p, i) => {
-      if (i > 0) doc.addPage("a4", "portrait");
+      if (i + offset > 0) doc.addPage("a4", "portrait");
       const r = C.computeProcess(state, p);
-      drawPage(doc, font, state, p, r, state.processes.indexOf(p) + 1, total, i + 1, procs.length);
+      drawPage(doc, font, state, p, r, state.processes.indexOf(p) + 1, total, i + 1 + offset, pageCount);
     });
     doc.setProperties({ title: `Balans Raporu – ${state.meta.rotorId || ""}`, subject: "ISO 21940-11 balans toleransı", creator: "Kademeli Şaft Balans Hesabı" });
     return doc;
   }
 
-  function drawPage(doc, font, state, p, r, stepNo, stepTotal, pageNo, pageCount) {
+  /** Sayfa çizim yardımcıları (metin, kırpma, çizgi, kutu, anahtar–değer). */
+  function kit(doc, font) {
     const T = font.t;
     const f = C.fmt;
     const fa = C.fmtAuto;
@@ -89,6 +96,152 @@ const LABEL = [51, 65, 85]; // önemli etiketler (baskıda okunur kalsın)
         txt(fit(v, 999, size, bold), x + labelW, y + i * step, { size, bold });
       });
     };
+    return { T, f, fa, txt, fit, hline, section, box, kv };
+  }
+
+  /**
+   * Özet (kapak) sayfası: ürün ve yapılacak işin sade, genel tanımı + adım listesi.
+   * Metinler sabit şablondur; verilerden yalnızca adlar ve temel sonuçlar eklenir.
+   */
+  function drawSummary(doc, font, state, procs, pageCount) {
+    const { T, f, txt, fit, hline, section, box, kv } = kit(doc, font);
+    const m = state.meta;
+    const dateStr = new Date().toLocaleString("tr-TR", { dateStyle: "short", timeStyle: "short" });
+    const R = procs.map((p) => ({ p, r: C.computeProcess(state, p) }));
+    const rotorName = m.rotorId || m.rotorModel || "Rotor";
+    const totalMass = state.parts.reduce((a, pt) => a + (C.num(pt.mass) > 0 ? C.num(pt.mass) : 0), 0);
+    const g = state.global;
+
+    txt("Balans Proses Özeti", M, 20, { size: 22 });
+    txt("Özet", PAGE_W - M, 20, { size: 9, color: MUTED, align: "right" });
+    hline(23, M, PAGE_W - M, 0.6);
+    kv(
+      [
+        ["Sipariş no", m.orderNo || "–"],
+        ["Rotor ID", m.rotorId || "–", true],
+        ["Rotor modeli", m.rotorModel || "–"],
+      ],
+      M + 4, 28.5, 28
+    );
+    kv(
+      [
+        ["Rapor tarihi", dateStr],
+        ["Proses adımı", `${procs.length}`, true],
+        ["Hazırlayan", m.operator || "–"],
+      ],
+      112, 28.5, 28
+    );
+
+    // Ne yapılacak?
+    let y = 48;
+    section("Bu doküman ne anlatıyor?", y);
+    y += 7;
+    const para = (text, size = 10) => {
+      doc.setFont(font.name, "normal");
+      doc.setFontSize(size);
+      doc.setTextColor(...INK);
+      const lines = doc.splitTextToSize(T(text), CW);
+      lines.forEach((l, i) => doc.text(l, M, y + i * size * 0.45));
+      y += lines.length * size * 0.45 + 2.5;
+    };
+    para(
+      `Bu doküman, ${rotorName} için montaj sırasında uygulanacak balans işlemlerini özetler. ` +
+        `Rotor tek seferde değil, ${procs.length} adımda balanslanır: her adımda o ana kadar takılmış parçalarla ` +
+        `birlikte balans alınır ve kalan dengesizlik izin verilen sınırın altına indirilir. ` +
+        `Böylece her yeni parça takıldığında rotor dengeli kalır.`
+    );
+    para(
+      `İzin verilen sınırlar ISO 21940-11 standardına göre, rotorun kütlesi, çalışma hızı ve istenen ` +
+        `balans kalitesinden (G sınıfı) hesaplanır. Operatör için sonuç, her düzeltme düzleminde ` +
+        `bırakılabilecek en fazla artık kütledir (mg / g).`
+    );
+
+    // Ürün: şema + birkaç temel bilgi
+    y += 2;
+    section("Rotor", y);
+    y += 4;
+    const schH = 46;
+    const schW = CW * 0.64;
+    box(M, y, schW, schH, [255, 255, 255]);
+    S.toPDF(doc, S.build(state, { w: 600, h: 230, print: true }), M + 1.5, y + 1.5, schW - 3, schH - 3, font.name);
+    const ix = M + schW + 6;
+    [
+      ["Parça sayısı", `${state.parts.length}`],
+      ["Toplam kütle", `${f(totalMass, 1)} g`],
+      ["Servis hızı", `${f(C.num(g.serviceSpeed), 0)} rpm`],
+      ["Kalite sınıfı", `G ${C.fmtAuto(C.num(g.G), 2)}`],
+    ].forEach(([k, v], i) => {
+      txt(k, ix, y + 7 + i * 10, { size: 8.5, color: LABEL });
+      txt(v, ix, y + 12 + i * 10, { size: 12, bold: true });
+    });
+    y += schH + 9;
+
+    // Adımlar
+    section("Proses adımları", y);
+    y += 4;
+    const cols = [
+      { h: "Adım", w: 12, a: "left" },
+      { h: "Proses", w: 40, a: "left" },
+      { h: "Montajdaki parçalar", w: 40, a: "left" },
+      { h: "Balans", w: 44, a: "left" },
+      { h: "İzin verilen artık kütle", w: CW - 136, a: "right" },
+    ];
+    const rowH = 7;
+    const footerY = PAGE_H - 12;
+    const bottom = footerY - 30; // okuma rehberi için yer
+    doc.setFillColor(236, 240, 244);
+    doc.rect(M, y, CW, 6, "F");
+    let cx = M;
+    cols.forEach((c) => {
+      txt(c.h, c.a === "right" ? cx + c.w - 2 : cx + 2, y + 4.2, { size: 8, bold: true, color: LABEL, align: c.a });
+      cx += c.w;
+    });
+    y += 6;
+    const maxRows = Math.max(1, Math.floor((bottom - y) / rowH));
+    const shown = R.length > maxRows ? R.slice(0, maxRows - 1) : R;
+    shown.forEach(({ p, r }, i) => {
+      if (i % 2 === 1) {
+        doc.setFillColor(248, 250, 252);
+        doc.rect(M, y, CW, rowH, "F");
+      }
+      const parts = state.parts.filter((pt) => p.partIds.includes(pt.id)).map((pt) => pt.name).join(", ") || "–";
+      const how = r.valid ? `${r.nPlanes} düzlem · ${r.type.nameEn}` : `${p.planes === 1 ? 1 : 2} düzlem`;
+      const tol = r.valid ? r.planes.map((pl, k) => `${r.nPlanes === 1 ? "" : `D${k + 1} `}${C.fmtMass(pl.m)}`).join("  ") : "tanım eksik";
+      const vals = [String(state.processes.indexOf(p) + 1), p.name || "–", parts, how, tol];
+      let x = M;
+      cols.forEach((c, j) => {
+        const bold = j === 1 || j === 4;
+        txt(fit(vals[j], c.w - 4, 9, bold), c.a === "right" ? x + c.w - 2 : x + 2, y + 4.8, {
+          size: 9, bold, align: c.a, color: j === 4 && !r.valid ? [198, 40, 40] : INK,
+        });
+        x += c.w;
+      });
+      y += rowH;
+    });
+    if (shown.length < R.length) {
+      txt(`… ve ${R.length - shown.length} adım daha (ayrıntılar sonraki sayfalarda)`, M + 2, y + 4.8, { size: 8.5, color: MUTED });
+      y += rowH;
+    }
+    hline(y, M, PAGE_W - M, 0.25, LINE);
+
+    // Okuma rehberi
+    y += 10;
+    txt("Sonraki sayfalarda", M, y, { size: 11 });
+    hline(y + 1.2, M, PAGE_W - M, 0.25);
+    [
+      "Her proses adımı için ayrı bir sayfa: rotor tipi, şema ve her düzlem için izin verilen artık kütle ile dengesizlik.",
+      "Balans geometrisi: yataktan yatağa ve yataktan düzleme mesafeler, düzeltme yarıçapları.",
+      "ISO 21940-11 hesap özeti ve komşu standart G sınıflarıyla karşılaştırma.",
+    ].forEach((l, i) => txt(fit(`•  ${l}`, CW, 8.5), M + 2, y + 6 + i * 4.6, { size: 8.5, color: LABEL }));
+
+    hline(footerY, M, PAGE_W - M, 0.3, LINE);
+    txt(fit(`Hazırlayan: ${m.operator || "................................"}     Kontrol: ................................     ${m.notes || ""}`, CW - 30, 7.5), M, footerY + 4, { size: 7.5, color: MUTED });
+    txt(`Sayfa 1 / ${pageCount}`, PAGE_W - M, footerY + 4, { size: 7.5, color: MUTED, align: "right" });
+    txt(`Kademeli Şaft Balans Hesabı · ISO 21940-11 · ${dateStr}`, M, footerY + 7.5, { size: 6.5, color: MUTED });
+  }
+
+  function drawPage(doc, font, state, p, r, stepNo, stepTotal, pageNo, pageCount) {
+    const { T, f, fa, txt, fit, hline, section, box, kv } = kit(doc, font);
 
     // ---------------- Başlık (şablon: "Balancing report")
     txt("Balans Raporu", M, 20, { size: 22 });
@@ -222,9 +375,9 @@ const LABEL = [51, 65, 85]; // önemli etiketler (baskıda okunur kalsın)
     const geo = r.valid
       ? [
           ["Düzeltme düzlemi konumu", r.type.nameEn],
-          ["Yatak açıklığı L", `${f(r.L, 1)} mm`, true],
+          ["Yataktan yatağa (L)", `${f(r.L, 1)} mm`, true],
           ...r.planes.map((pl, i) => [
-            `${r.nPlanes === 1 ? "Düzlem" : `Düzlem ${i + 1}`} → ${pl.nearBearing.name}`,
+            `Yataktan ${r.nPlanes === 1 ? "düzleme" : `D${i + 1}`}`,
             pl.nearDist < 0.05 ? "yatak üzerinde" : `${f(pl.nearDist, 1)} mm · ${pl.nearSide}`,
             true,
           ]),
@@ -238,7 +391,6 @@ const LABEL = [51, 65, 85]; // önemli etiketler (baskıda okunur kalsın)
     });
     const iso = r.valid
       ? [
-          ["Hesap esası", "Kalite sınıfı G"],
           ["Balans kalite sınıfı", `G ${fa(pr.G, 2)}`],
           ["Rotor kütlesi", `${f(r.mass, 1)} g`],
           ["Servis hızı", `${f(pr.serviceSpeed, 0)} rpm (Ω = ${f(r.omega, 2)} rad/s)`],

@@ -122,7 +122,11 @@
       if (sel) {
         shapes.push({ t: "text", x: cx, y: axisY - rh - 4, s: `D${idx + 1}`, size: 10.5, anchor: "middle", fill: "#0d47a1", bold: true });
         const rName = proc.planes === 1 ? "r" : `r${idx + 1}`;
-        shapes.push({ t: "text", x: cx, y: axisY + rh + 11, s: `${rName} = ${C.fmt(C.num(pp.point.r), 1)}`, size: 9.5, anchor: "middle", fill: "#0d47a1", bold: true });
+        const y0 = axisY + rh + 11;
+        // çakışırsa önce aşağı, sonra yana kaydırılır (bkz. declutter)
+        const move = [0, 11, 22, 33, 44].map((dy) => ({ x: cx, y: y0 + dy, anchor: "middle" }));
+        move.push({ x: cx + 6, y: y0, anchor: "start" }, { x: cx - 6, y: y0, anchor: "end" });
+        shapes.push({ t: "text", x: cx, y: y0, s: `${rName} = ${C.fmt(C.num(pp.point.r), 1)}`, size: 9.5, anchor: "middle", fill: "#0d47a1", bold: true, move, prio: 1 });
       } else if (!proc) {
         shapes.push({ t: "text", x: cx, y: axisY - rh - 4, s: pp.point.name || "P", size: 9, anchor: "middle", fill: COL.plane });
       }
@@ -157,7 +161,13 @@
       shapes.push({ t: "circle", cx, cy: axisY, r: 6, fill: "#ffffff", stroke: COL.cg, width: 1.5 });
       shapes.push({ t: "poly", pts: [[cx, axisY], [cx, axisY - 6], [cx + 6, axisY]], fill: COL.cg, stroke: "none" });
       shapes.push({ t: "poly", pts: [[cx, axisY], [cx, axisY + 6], [cx - 6, axisY]], fill: COL.cg, stroke: "none" });
-      shapes.push({ t: "text", x: cx + 9, y: axisY + 16, s: "CG", size: 9.5, anchor: "start", fill: COL.cg, bold: true });
+      const move = [
+        { x: cx + 9, y: axisY + 16, anchor: "start" },
+        { x: cx - 9, y: axisY + 16, anchor: "end" },
+        { x: cx + 9, y: axisY - 8, anchor: "start" },
+        { x: cx - 9, y: axisY - 8, anchor: "end" },
+      ];
+      shapes.push({ t: "text", x: cx + 9, y: axisY + 16, s: "CG", size: 9.5, anchor: "start", fill: COL.cg, bold: true, move, prio: 2 });
     }
 
     // Ölçüler: yatak açıklığı L ve her düzlemin en yakın yatağa mesafesi
@@ -173,13 +183,53 @@
         const y = H - (res.nPlanes === 1 ? 28 : 44 - i * 17);
         const name = res.nPlanes === 1 ? "D" : `D${i + 1}`;
         if (pl.nearDist < 0.05) {
-          shapes.push({ t: "text", x: X(pl.x), y: y - 4, s: `${name}: yatak üzerinde`, size: 10, anchor: "middle", fill: COL.dim, bold: true });
-        } else dimLine(pl.nearBearing.xv, pl.x, y, `${name} – ${pl.nearBearing.name}: ${C.fmt(pl.nearDist, 1)} mm`, true);
+          shapes.push({ t: "text", x: X(pl.x), y: y - 4, s: `${name} yatak üzerinde`, size: 10, anchor: "middle", fill: COL.dim, bold: true });
+        } else dimLine(pl.nearBearing.xv, pl.x, y, `Yataktan ${name}: ${C.fmt(pl.nearDist, 1)} mm`, true);
       });
-      dimLine(res.bearings[0].xv, res.bearings[1].xv, H - 8, `L = ${C.fmt(res.L, 1)} mm`, false);
+      dimLine(res.bearings[0].xv, res.bearings[1].xv, H - 8, `Yataktan yatağa: ${C.fmt(res.L, 1)} mm`, false);
     }
     if (opts.print) for (const sh of shapes) if (sh.t === "text") sh.size *= 1.12;
+    declutter(shapes, H - 62);
     return { w: W, h: H, shapes };
+  }
+
+  /** Yaklaşık metin kutusu (yazı tipi ölçümü olmadan). */
+  function textBox(t, x = t.x, y = t.y, anchor = t.anchor) {
+    const w = String(t.s).length * t.size * (t.bold ? 0.58 : 0.54);
+    const x0 = anchor === "middle" ? x - w / 2 : anchor === "end" ? x - w : x;
+    return { x0: x0 - 1, x1: x0 + w + 1, y0: y - t.size * 0.82, y1: y + t.size * 0.22 };
+  }
+  const overlapArea = (a, b) => Math.max(0, Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0)) * Math.max(0, Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0));
+
+  /**
+   * Taşınabilir etiketleri (move adayları olan) diğer yazılar ve yatak üçgenleriyle
+   * çakışmayacak ilk konuma yerleştirir; hiçbiri boş değilse en az çakışanı seçer.
+   */
+  function declutter(shapes, maxY) {
+    const movable = shapes.filter((s) => s.t === "text" && s.move).sort((a, b) => a.prio - b.prio);
+    const obstacles = shapes
+      .filter((s) => (s.t === "text" && !s.move) || s.t === "poly")
+      .map((s) => {
+        if (s.t === "text") return textBox(s);
+        const xs = s.pts.map((p) => p[0]);
+        const ys = s.pts.map((p) => p[1]);
+        return { x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys), y1: Math.max(...ys) };
+      });
+    for (const t of movable) {
+      let best = null;
+      for (const c of t.move) {
+        if (c.y > maxY) continue;
+        const b = textBox(t, c.x, c.y, c.anchor);
+        const cost = obstacles.reduce((sum, o) => sum + overlapArea(b, o), 0);
+        if (!best || cost < best.cost) best = { c, b, cost };
+        if (cost === 0) break;
+      }
+      if (best) {
+        Object.assign(t, { x: best.c.x, y: best.c.y, anchor: best.c.anchor });
+        obstacles.push(best.b);
+      }
+      delete t.move;
+    }
   }
 
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
