@@ -94,3 +94,31 @@ test("kütle gösterimi: 1 g altı otomatik mg", () => {
   assert.equal(C.massParts(0.99996).unit, "g"); // 1000 mg'a yuvarlanırsa g
   assert.equal(C.fmtMass(0.275), "275 mg");
 });
+
+test("en yakın yatak mesafesi", () => {
+  const st = rotor({ pts: ["pL", "pR"] }); // polar: -30 ve 170, yataklar 0 / 135
+  const r = C.computeProcess(st, st.processes[0]);
+  assert.equal(r.planes[0].nearBearing.id, "A");
+  close(r.planes[0].nearDist, 30);
+  assert.equal(r.planes[0].nearSide, "dışarıda");
+  assert.equal(r.planes[1].nearBearing.id, "B");
+  close(r.planes[1].nearDist, 35);
+  const st2 = rotor(); // 23 ve 103,5 → A'dan 23 içeride, B'den 31,5 içeride
+  const r2 = C.computeProcess(st2, st2.processes[0]);
+  close(r2.planes[0].nearDist, 23);
+  close(r2.planes[1].nearDist, 31.5);
+  assert.equal(r2.planes[1].nearSide, "içeride");
+});
+
+test("komşu standart G karşılaştırması", () => {
+  const st = rotor({ overrides: { G: 0.6 } });
+  const r = C.computeProcess(st, st.processes[0]);
+  const rows = C.gradeComparison(r);
+  assert.deepEqual(rows.map((x) => x.G), [0.4, 0.6, 1, 2.5]);
+  assert.equal(rows[1].current, true);
+  assert.equal(rows[1].standard, false);
+  close(rows[2].Uper, (r.Uper * 1) / 0.6);
+  close(rows[0].planes[0].m, (r.planes[0].m * 0.4) / 0.6);
+  const st2 = rotor({ overrides: { G: 1 } });
+  assert.deepEqual(C.gradeComparison(C.computeProcess(st2, st2.processes[0])).map((x) => x.G), [0.4, 1, 2.5, 6.3]);
+});
