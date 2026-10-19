@@ -76,11 +76,12 @@ button, input, select { font: inherit; color: inherit; }
 /* ---------- Rotor tanımı paneli ---------- */
 .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); }
 .panel-h { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 18px; padding: 14px 18px; }
-.panel-toggle { display: flex; align-items: center; gap: 10px; border: 0; background: none; padding: 0; cursor: pointer; text-align: left; min-width: 0; }
+.panel-toggle { display: flex; align-items: center; gap: 10px; border: 0; background: none; padding: 0; cursor: pointer; text-align: left; min-width: 0; flex: 1 1 320px; }
 .panel-toggle .chev { width: 26px; height: 26px; display: grid; place-items: center; border-radius: 6px; background: #eef0f2; color: var(--accent); font-size: 13px; flex: none; }
 .panel-toggle:hover .chev { background: var(--accent-soft); }
-.panel-title { display: block; font-size: 16px; font-weight: 700; color: var(--text); max-width: 360px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.def-stats { display: flex; flex-wrap: wrap; gap: 8px; flex: 1; justify-content: flex-end; }
+/* Başlık her ekranda tam görünür; sığmazsa alt satıra geçer */
+.panel-title { display: block; font-size: 16px; font-weight: 700; color: var(--text); line-height: 1.3; overflow-wrap: anywhere; }
+.def-stats { display: flex; flex-wrap: wrap; gap: 8px; flex: 0 1 auto; justify-content: flex-end; }
 .stat { display: inline-flex; flex-direction: column; padding: 4px 12px; border-left: 2px solid var(--border); line-height: 1.25; }
 .stat span { font-size: 11px; color: var(--muted); }
 .stat b { font-size: 14px; font-variant-numeric: tabular-nums; }
@@ -242,7 +243,6 @@ pre.raw { max-height: 260px; overflow: auto; font-size: 11.5px; background: var(
 @media (max-width: 560px) {
   main, .topbar { padding-left: 16px; padding-right: 16px; }
   .def-stats { justify-content: flex-start; }
-  .panel-title { max-width: 220px; }
   .part-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; }
   .pt-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; }
   .pt-row > :first-child { grid-column: 1 / -1; }
