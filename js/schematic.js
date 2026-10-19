@@ -7,7 +7,7 @@
   "use strict";
   const C = root.BalCalc;
 
-  const COL = {
+  const BASE_COL = {
     shaft: "#8796a8",
     part: "#cfd8e3",
     partStroke: "#6b7b8f",
@@ -27,7 +27,21 @@
    * @param state  uygulama durumu
    * @param opts   { process?, result?, w?, h? }
    */
+  // PDF baskısı için daha koyu tonlar
+  const PRINT = {
+    shaft: "#5f6f82",
+    partStroke: "#4a5a6e",
+    plane: "#1565c0",
+    planeOff: "#90caf9",
+    bearing: "#212b31",
+    cg: "#c62828",
+    dim: "#1f2a30",
+    text: "#111111",
+    muted: "#6b7c88",
+  };
+
   function build(state, opts = {}) {
+    const COL = opts.print ? { ...BASE_COL, ...PRINT } : BASE_COL;
     const W = opts.w || 760;
     const H = opts.h || 240;
     const shapes = [];
@@ -75,7 +89,7 @@
     // Parçalar (kütle ∝ hacim → yükseklik ∝ ∛m)
     const maxCb = Math.max(1, ...parts.map((p) => Math.cbrt(Math.max(0, C.num(p.mass) || 0))));
     const maxR = Math.max(1, ...points.map((pp) => C.num(pp.point.r) || 0));
-    const rScale = (r) => 8 + (Math.max(0, r) / maxR) * (H * 0.3);
+    const rScale = (r) => 8 + (Math.max(0, r) / maxR) * (H * 0.24);
     parts.forEach((p, i) => {
       const on = partOn(p);
       const k = Math.cbrt(Math.max(0, C.num(p.mass) || 0)) / maxCb;
@@ -144,25 +158,25 @@
       shapes.push({ t: "text", x: cx + 9, y: axisY + 16, s: "CG", size: 9.5, anchor: "start", fill: COL.cg, bold: true });
     }
 
-    // Ölçü çizgileri (a, b, c) – yalnızca geçerli proses sonucu ile
+    // Ölçüler: yatak açıklığı L ve her düzlemin en yakın yatağa mesafesi
     if (res && res.valid) {
-      const y = H - 22;
-      const xA = res.bearings[0].xv;
-      const xB = res.bearings[1].xv;
-      const stops = [xA, ...res.planes.map((p) => p.x), xB];
-      const labels = res.nPlanes === 1 ? ["a", "c"] : ["a", "b", "c"];
-      const all = stops.map(X);
-      const minX = Math.min(...all);
-      const maxX = Math.max(...all);
-      shapes.push({ t: "line", x1: minX, y1: y, x2: maxX, y2: y, stroke: COL.dim, width: 0.6 });
-      all.forEach((px) => shapes.push({ t: "line", x1: px, y1: y - 6, x2: px, y2: y + 6, stroke: COL.dim, width: 0.9 }));
-      for (let i = 0; i < stops.length - 1; i++) {
-        const d = stops[i + 1] - stops[i];
-        const mid = (all[i] + all[i + 1]) / 2;
-        shapes.push({ t: "text", x: mid, y: y - 4, s: `${labels[i]} = ${C.fmt(d, 1)}`, size: 9.5, anchor: "middle", fill: COL.dim });
-      }
-      shapes.push({ t: "text", x: (X(xA) + X(xB)) / 2, y: H - 4, s: `L = ${C.fmt(xB - xA, 1)} mm`, size: 9, anchor: "middle", fill: COL.muted });
+      const dimLine = (x1, x2, y, label, bold) => {
+        const a = X(x1);
+        const b = X(x2);
+        shapes.push({ t: "line", x1: a, y1: y, x2: b, y2: y, stroke: COL.dim, width: 0.8 });
+        [a, b].forEach((px) => shapes.push({ t: "line", x1: px, y1: y - 2, x2: px, y2: y + 5, stroke: COL.dim, width: 1 })); // yazının altında kalır
+        shapes.push({ t: "text", x: (a + b) / 2, y: y - 4, s: label, size: 10, anchor: "middle", fill: COL.dim, bold });
+      };
+      res.planes.forEach((pl, i) => {
+        const y = H - (res.nPlanes === 1 ? 28 : 44 - i * 17);
+        const name = res.nPlanes === 1 ? "D" : `D${i + 1}`;
+        if (pl.nearDist < 0.05) {
+          shapes.push({ t: "text", x: X(pl.x), y: y - 4, s: `${name}: yatak üzerinde`, size: 10, anchor: "middle", fill: COL.dim, bold: true });
+        } else dimLine(pl.nearBearing.xv, pl.x, y, `${name} – ${pl.nearBearing.name}: ${C.fmt(pl.nearDist, 1)} mm`, true);
+      });
+      dimLine(res.bearings[0].xv, res.bearings[1].xv, H - 8, `L = ${C.fmt(res.L, 1)} mm`, false);
     }
+    if (opts.print) for (const sh of shapes) if (sh.t === "text") sh.size *= 1.12;
     return { w: W, h: H, shapes };
   }
 
@@ -238,5 +252,5 @@
     }
   }
 
-  root.Schematic = { build, toSVG, toPDF, COL };
+  root.Schematic = { build, toSVG, toPDF, COL: BASE_COL };
 })(typeof self !== "undefined" ? self : this);

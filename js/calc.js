@@ -245,6 +245,14 @@
     res.type = detectType({ xA, xB, planesX: planes.map((p) => p.x), xcg });
     warnings.push(...res.type.notes);
 
+    // --- Her düzlemin en yakın yatağa mesafesi (operatörün tezgâhta kullandığı ölçü)
+    for (const pl of planes) {
+      const near = Math.abs(pl.x - xA) <= Math.abs(pl.x - xB) ? bA : bB;
+      pl.nearBearing = near;
+      pl.nearDist = Math.abs(pl.x - near.xv);
+      pl.nearSide = pl.nearDist < 0.05 ? "yatak üzerinde" : pl.x < xA || pl.x > xB ? "dışarıda" : "içeride";
+    }
+
     // --- Düzeltme düzlemlerine transfer
     if (nPlanes === 1) {
       const pl = planes[0];
@@ -296,6 +304,28 @@
   }
 
   /**
+   * Seçili G ile komşu standart sınıfların karşılaştırması: bir alt ve iki üst standart G.
+   * Tüm toleranslar G ile doğrusal olduğundan sonuçlar oranlanarak bulunur.
+   */
+  function gradeComparison(res) {
+    if (!res || !res.valid) return [];
+    const G = res.params.G;
+    const same = (a, b) => Math.abs(a - b) < 1e-9;
+    const below = G_GRADES.filter((g) => g < G && !same(g, G)).slice(-1);
+    const above = G_GRADES.filter((g) => g > G && !same(g, G)).slice(0, 2);
+    return [...below, G, ...above].map((g) => {
+      const k = g / G;
+      return {
+        G: g,
+        current: same(g, G),
+        standard: G_GRADES.some((x) => same(x, g)),
+        Uper: res.Uper * k,
+        planes: res.planes.map((pl) => ({ U: pl.U * k, m: pl.m * k })),
+      };
+    });
+  }
+
+  /**
    * Kütle gösterimi: 1 g altındaki değerler otomatik olarak mg'a çevrilir.
    * @returns {{ v: string, unit: "g" | "mg" }}
    */
@@ -314,6 +344,7 @@
   };
 
   return {
+    gradeComparison,
     massParts,
     fmtMass,
     G_GRADES,

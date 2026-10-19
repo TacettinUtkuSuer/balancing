@@ -13,7 +13,8 @@
   const M = 14; // kenar boşluğu
   const CW = PAGE_W - 2 * M;
   const INK = [31, 42, 51];
-  const MUTED = [100, 116, 139];
+  const MUTED = [100, 116, 139]; // ikincil bilgiler
+const LABEL = [51, 65, 85]; // önemli etiketler (baskıda okunur kalsın)
   const ACCENT = [13, 71, 161];
   const ACCENT_BG = [237, 245, 253];
   const LINE = [195, 202, 211];
@@ -83,7 +84,7 @@
     };
     const kv = (rows, x, y, labelW, step = 4.6, size = 9) => {
       rows.forEach(([k, v, bold], i) => {
-        txt(k, x, y + i * step, { size, color: MUTED });
+        txt(k, x, y + i * step, { size, color: LABEL });
         doc.setFont(font.name, bold ? "bold" : "normal");
         txt(fit(v, 999, size, bold), x + labelW, y + i * step, { size, bold });
       });
@@ -135,7 +136,7 @@
     const schX = M + leftW + 4;
     const schW = CW - leftW - 4;
     box(schX, y, schW, topH, [255, 255, 255]);
-    const sch = S.build(state, { process: p, result: r, w: 540, h: 250 });
+    const sch = S.build(state, { process: p, result: r, w: 540, h: 265, print: true });
     S.toPDF(doc, sch, schX + 1.5, y + 1.5, schW - 3, topH - 3, font.name);
     y += topH + 4;
 
@@ -152,31 +153,33 @@
     y += 14;
 
     // ---------------- Tolerans kutuları (g ve g·mm)
-    const tolH = 31;
+    const tolH = 34;
     if (r.valid) {
       const n = r.planes.length;
       const gap = 4;
       const bw = n === 1 ? (CW - gap) * 0.62 : (CW - gap) / 2;
       r.planes.forEach((pl, i) => {
         const bx = M + i * (bw + gap);
-        box(bx, y, bw, tolH, ACCENT_BG, ACCENT, 0.6);
+        box(bx, y, bw, tolH, ACCENT_BG, ACCENT, 0.9);
         txt(n === 1 ? "DÜZLEM (STATİK)" : `DÜZLEM ${i + 1}`, bx + 4, y + 5.5, { size: 8.5, bold: true, color: ACCENT });
-        txt(fit(`${pl.point.name} · ${pl.part.name} · x = ${f(pl.x, 1)} mm · r = ${f(pl.r, 1)} mm`, bw - 8, 7.5), bx + 4, y + 9.5, { size: 7.5, color: MUTED });
+        txt(fit(`${pl.point.name} · ${pl.part.name} · r = ${f(pl.r, 1)} mm`, bw - 8, 7.5), bx + 4, y + 9.5, { size: 7.5, color: LABEL });
+        const near = pl.nearDist < 0.05 ? `${pl.nearBearing.name} üzerinde` : `${pl.nearBearing.name} → ${f(pl.nearDist, 1)} mm · ${pl.nearSide}`;
+        txt(fit(near, bw - 8, 8.5, true), bx + 4, y + 13.8, { size: 8.5, bold: true });
         const mp = C.massParts(pl.m);
-        txt(mp.v, bx + 4, y + 22, { size: 26, bold: true });
+        txt(mp.v, bx + 4, y + 25, { size: 26, bold: true });
         doc.setFont(font.name, "bold");
         doc.setFontSize(26);
         const wNum = doc.getTextWidth(T(mp.v));
-        txt(mp.unit, bx + 5.5 + wNum, y + 22, { size: 13, bold: true, color: MUTED });
-        txt(`${fa(pl.U)} g·mm`, bx + bw - 4, y + 22, { size: 14, bold: true, align: "right" });
-        txt("izin verilen artık kütle", bx + 4, y + 27, { size: 6.8, color: MUTED });
-        txt("izin verilen artık dengesizlik", bx + bw - 4, y + 27, { size: 6.8, color: MUTED, align: "right" });
+        txt(mp.unit, bx + 5.5 + wNum, y + 25, { size: 13, bold: true, color: LABEL });
+        txt(`${fa(pl.U)} g·mm`, bx + bw - 4, y + 25, { size: 14, bold: true, align: "right" });
+        txt("izin verilen artık kütle", bx + 4, y + 30.5, { size: 6.8, color: MUTED });
+        txt("izin verilen artık dengesizlik", bx + bw - 4, y + 30.5, { size: 6.8, color: MUTED, align: "right" });
       });
       if (n === 1) {
         const bx = M + bw + gap;
         const w2 = CW - bw - gap;
         box(bx, y, w2, tolH, [248, 250, 252]);
-        txt("TOPLAM U_per", bx + 4, y + 5.5, { size: 8.5, bold: true, color: MUTED });
+        txt("TOPLAM U_per", bx + 4, y + 5.5, { size: 8.5, bold: true, color: LABEL });
         txt(`${fa(r.Uper)} g·mm`, bx + 4, y + 18, { size: 16, bold: true });
         txt(`e_per = ${fa(r.eper * 1000)} µm`, bx + 4, y + 25, { size: 8, color: MUTED });
       }
@@ -200,34 +203,35 @@
     chips.forEach(([k, v, s], i) => {
       const bx = M + i * (cw + 3);
       box(bx, y, cw, 12, [248, 250, 252]);
-      txt(k, bx + 3, y + 4.2, { size: 7, color: MUTED });
+      txt(k, bx + 3, y + 4.2, { size: 7, color: LABEL });
       txt(v, bx + 3, y + 9.6, { size: 10.5, bold: true });
       txt(fit(s, cw / 2 - 3, 6.5), bx + cw - 3, y + 4.2, { size: 6.5, color: MUTED, align: "right" });
     });
     y += 12 + 7;
 
-    // ---------------- ABC geometrisi + ISO 21940-11 hesabı (şablon düzeni)
+    // ---------------- Balans geometrisi + ISO 21940-11 hesabı
     const colW = CW / 2;
-    txt("ABC geometrisi", M, y, { size: 11 });
+    txt("Balans geometrisi", M, y, { size: 11 });
     hline(y + 1.2, M, M + colW - 6, 0.25);
     txt("DIN ISO 21940-11 hesabı", M + colW, y, { size: 11 });
     hline(y + 1.2, M + colW, PAGE_W - M, 0.25);
     y += 5.5;
     const dash = "–";
-    const abc = r.valid
+    const geo = r.valid
       ? [
           ["Düzeltme düzlemi konumu", r.type.nameEn],
-          ["Mesafe a", `${f(r.abc.a, 1)} mm`],
-          ["Mesafe b", r.abc.b === null ? dash : `${f(r.abc.b, 1)} mm`],
-          ["Mesafe c", `${f(r.abc.c, 1)} mm`],
-          ["Yarıçap 1", `${f(r.planes[0].r, 1)} mm`],
-          ["Yarıçap 2", r.planes[1] ? `${f(r.planes[1].r, 1)} mm` : dash],
-          ["Yatak açıklığı L", `${f(r.L, 1)} mm`],
+          ["Yatak açıklığı L", `${f(r.L, 1)} mm`, true],
+          ...r.planes.map((pl, i) => [
+            `${r.nPlanes === 1 ? "Düzlem" : `Düzlem ${i + 1}`} → ${pl.nearBearing.name}`,
+            pl.nearDist < 0.05 ? "yatak üzerinde" : `${f(pl.nearDist, 1)} mm · ${pl.nearSide}`,
+            true,
+          ]),
+          ...r.planes.map((pl, i) => [`Yarıçap ${r.nPlanes === 1 ? "" : i + 1}`.trim(), `${f(pl.r, 1)} mm`]),
         ]
       : [["Geometri", "eksik tanım"]];
-    abc.forEach(([k, v], i) => {
-      txt(k, M + 4, y + i * 4.3, { size: 8.5, color: MUTED });
-      txt(fit(v, colW - 52, 8.5), M + 48, y + i * 4.3, { size: 8.5 });
+    geo.forEach(([k, v, bold], i) => {
+      txt(fit(k, 42, 8.5), M + 4, y + i * 4.3, { size: 8.5, color: LABEL });
+      txt(fit(v, colW - 52, 8.5, bold), M + 48, y + i * 4.3, { size: 8.5, bold });
     });
     const iso = r.valid
       ? [
@@ -241,10 +245,10 @@
         ]
       : [["Durum", "hesap yapılamadı"]];
     iso.forEach(([k, v], i) => {
-      txt(k, M + colW + 4, y + i * 4.3, { size: 8.5, color: MUTED });
+      txt(k, M + colW + 4, y + i * 4.3, { size: 8.5, color: LABEL });
       txt(fit(v, colW - 46, 8.5, i >= 6), M + colW + 42, y + i * 4.3, { size: 8.5, bold: i >= 6 });
     });
-    y += Math.max(abc.length, iso.length) * 4.3 + 3;
+    y += Math.max(geo.length, iso.length) * 4.3 + 3;
 
     // ---------------- Kompakt detay tablosu (kalan alana sığdırılır)
     const footerY = PAGE_H - 12;
@@ -294,7 +298,7 @@
     let cx = M;
     cols.forEach((c) => {
       const tx = c.a === "right" ? cx + c.w - 1.5 : c.a === "center" ? cx + c.w / 2 : cx + 1.5;
-      txt(fit(c.h, c.w - 2, size - 0.5, true), tx, y + rowH - 1.2, { size: size - 0.5, bold: true, color: MUTED, align: c.a });
+      txt(fit(c.h, c.w - 2, size - 0.5, true), tx, y + rowH - 1.2, { size: size - 0.5, bold: true, color: LABEL, align: c.a });
       cx += c.w;
     });
     y += rowH;

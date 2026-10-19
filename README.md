@@ -28,7 +28,9 @@ python3 -m http.server 8000   # → http://localhost:8000
 Her proses kartı iki katmanlıdır:
 
 * **Operatör paneli (ilk bakış):** otomatik rotor tipi + temsil görseli, tespit gerekçesi,
-  her düzlem için büyük **gram (g)** ve **g·mm** tolerans kutuları, hızlar ve canlı şema.
+  her düzlem için büyük **gram (g)** ve **g·mm** tolerans kutuları, düzlemin **en yakın yatağa
+  mesafesi**, hızlar, canlı şema (yatak açıklığı L ve düzlem–yatak ölçüleri) ve komşu standart G
+  sınıflarıyla (bir alt, iki üst) bilgi amaçlı karşılaştırma tablosu.
 * **Mühendislik detayları (akordeon):** kütle merkezi entegrasyon tablosu, eksenel moment
   dengesi / yatak yükleri, ISO 21940-11 formül adımları, yatak payları, düzlem transferi ve
   ham parametreler.
@@ -50,7 +52,7 @@ hesaplanır). *JSON içe aktar* projeyi eksiksiz geri yükler. Örnek: [`example
 
 *PDF raporu* (tek proses) veya *Tüm raporlar* (her proses bir sayfa). Sayfa düzeni referans
 "Balancing report" şablonunu izler: başlık bilgileri → tip verisi ve hızlı bakış (temsil görseli,
-şema) → g / g·mm tolerans kutuları → hız şeridi → **ABC geometrisi** ve **DIN ISO 21940-11
+şema) → g / g·mm tolerans kutuları → hız şeridi → **balans geometrisi** (L ve her düzlemin en yakın yatağa mesafesi) ve **DIN ISO 21940-11
 hesabı** → kompakt parça / yatak tablosu. Tablo kalan alana sığdırılır (gerekirse yazı küçültülür,
 taşan satırlar "… ve N parça daha" olarak özetlenir); böylece her proses daima **tam 1 sayfadır**.
 

@@ -274,7 +274,7 @@
       <div class="kpi">X<sub>cg</sub> <b>${C.fmt(r.xcg, 1)}</b> mm</div>
       ${r.valid ? `<div class="kpi">U<sub>per</sub> toplam <b>${C.fmtAuto(r.Uper)}</b> g·mm</div>` : ""}
     </div>`;
-    const schem = `<div class="schem-box">${S.toSVG(S.build(state, { process: p, result: r, h: 230 }))}</div>`;
+    const schem = `<div class="schem-box">${S.toSVG(S.build(state, { process: p, result: r, h: 260 }))}</div>`;
     const warn = r.warnings.length ? `<div class="alert warn">${r.warnings.map(esc).join("<br>")}</div>` : "";
     if (!r.valid) {
       return `<div class="alert err"><b>Hesap yapılamadı:</b><ul>${r.errors.map((e) => `<li>${esc(e)}</li>`).join("")}</ul></div>${warn}${kpis}<div style="height:10px"></div>${schem}`;
@@ -283,7 +283,8 @@
       .map(
         (pl, i) => `<div class="tol">
           <div class="lbl">${r.nPlanes === 1 ? "Düzlem (statik)" : `Düzlem ${i + 1}`}</div>
-          <div class="where">${esc(pl.point.name)} · ${esc(pl.part.name)} · x = ${C.fmt(pl.x, 1)} mm · r = ${C.fmt(pl.r, 1)} mm</div>
+          <div class="where">${esc(pl.point.name)} · ${esc(pl.part.name)} · r = ${C.fmt(pl.r, 1)} mm</div>
+          <div class="near">${nearText(pl)}</div>
           <div class="big">${C.massParts(pl.m).v}<small>${C.massParts(pl.m).unit}</small></div>
           <div class="mid">${C.fmtAuto(pl.U)} <small>g·mm</small></div>
         </div>`
@@ -303,8 +304,35 @@
           <div class="tol-grid">${tiles}</div>
           ${kpis}
           ${schem}
+          ${renderGradeCompare(r)}
         </div>
       </div>`;
+  }
+
+  /** Düzlemin en yakın yatağa mesafesi, ör. "Sol Yatak'tan 38,0 mm · dışarıda". */
+  function nearText(pl) {
+    if (pl.nearDist < 0.05) return `${esc(pl.nearBearing.name)} üzerinde`;
+    return `${esc(pl.nearBearing.name)} → <b>${C.fmt(pl.nearDist, 1)} mm</b> · ${pl.nearSide}`;
+  }
+
+  /** Komşu standart G sınıfları (bilgi amaçlı, sade tablo). */
+  function renderGradeCompare(r) {
+    const rows = C.gradeComparison(r);
+    if (!rows.length) return "";
+    const head = r.planes.map((_, i) => `<th>${r.nPlanes === 1 ? "Düzlem" : `D${i + 1}`}</th>`).join("");
+    const body = rows
+      .map(
+        (row) => `<tr class="${row.current ? "cur" : ""}">
+          <td>G ${C.fmtAuto(row.G, 2)}${row.current ? ` <span class="hint">(seçili${row.standard ? "" : ", standart dışı"})</span>` : ""}</td>
+          <td>${C.fmtAuto(row.Uper)}</td>
+          ${row.planes.map((x) => `<td>${C.fmtMass(x.m)} <span class="hint">· ${C.fmtAuto(x.U)} g·mm</span></td>`).join("")}
+        </tr>`
+      )
+      .join("");
+    return `<div class="gcmp">
+      <div class="gcmp-h">Komşu standart G sınıflarıyla karşılaştırma <span class="hint">(bilgi amaçlı)</span></div>
+      <table class="tbl"><thead><tr><th>Sınıf</th><th>U<sub>per</sub> [g·mm]</th>${head}</tr></thead><tbody>${body}</tbody></table>
+    </div>`;
   }
 
   function renderConfig(p) {
