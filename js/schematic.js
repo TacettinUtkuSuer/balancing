@@ -89,7 +89,7 @@
     // Parçalar (kütle ∝ hacim → yükseklik ∝ ∛m)
     const maxCb = Math.max(1, ...parts.map((p) => Math.cbrt(Math.max(0, C.num(p.mass) || 0))));
     const maxR = Math.max(1, ...points.map((pp) => C.num(pp.point.r) || 0));
-    const rScale = (r) => 8 + (Math.max(0, r) / maxR) * (H * 0.24);
+    const rScale = (r) => 8 + (Math.max(0, r) / maxR) * (H * 0.2);
     parts.forEach((p, i) => {
       const on = partOn(p);
       const k = Math.cbrt(Math.max(0, C.num(p.mass) || 0)) / maxCb;
@@ -121,6 +121,8 @@
       });
       if (sel) {
         shapes.push({ t: "text", x: cx, y: axisY - rh - 4, s: `D${idx + 1}`, size: 10.5, anchor: "middle", fill: "#0d47a1", bold: true });
+        const rName = proc.planes === 1 ? "r" : `r${idx + 1}`;
+        shapes.push({ t: "text", x: cx, y: axisY + rh + 11, s: `${rName} = ${C.fmt(C.num(pp.point.r), 1)}`, size: 9.5, anchor: "middle", fill: "#0d47a1", bold: true });
       } else if (!proc) {
         shapes.push({ t: "text", x: cx, y: axisY - rh - 4, s: pp.point.name || "P", size: 9, anchor: "middle", fill: COL.plane });
       }

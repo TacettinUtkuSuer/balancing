@@ -87,10 +87,10 @@ test("doğrulama hataları", () => {
 });
 
 test("kütle gösterimi: 1 g altı otomatik mg", () => {
-  assert.deepEqual(C.massParts(0.0698), { v: "69,8", unit: "mg" });
-  assert.deepEqual(C.massParts(0.001), { v: "1,00", unit: "mg" });
-  assert.deepEqual(C.massParts(0.00042), { v: "0,420", unit: "mg" });
-  assert.deepEqual(C.massParts(2.5), { v: "2,50", unit: "g" });
+  assert.deepEqual(C.massParts(0.0698), { v: "69.8", unit: "mg" });
+  assert.deepEqual(C.massParts(0.001), { v: "1.00", unit: "mg" });
+  assert.deepEqual(C.massParts(0.00042), { v: "0.420", unit: "mg" });
+  assert.deepEqual(C.massParts(2.5), { v: "2.50", unit: "g" });
   assert.equal(C.massParts(0.99996).unit, "g"); // 1000 mg'a yuvarlanırsa g
   assert.equal(C.fmtMass(0.275), "275 mg");
 });
@@ -121,4 +121,13 @@ test("komşu standart G karşılaştırması", () => {
   close(rows[0].planes[0].m, (r.planes[0].m * 0.4) / 0.6);
   const st2 = rotor({ overrides: { G: 1 } });
   assert.deepEqual(C.gradeComparison(C.computeProcess(st2, st2.processes[0])).map((x) => x.G), [0.4, 1, 2.5, 6.3]);
+});
+
+test("sayı biçimi: ondalık nokta, binlik üst tırnak", () => {
+  assert.equal(C.fmt(45000, 0), "45'000");
+  assert.equal(C.fmt(2470, 1), "2'470.0");
+  assert.equal(C.fmt(1234567.891, 2), "1'234'567.89");
+  assert.equal(C.fmt(-63.7, 1), "-63.7");
+  assert.equal(C.fmt(-0.01, 1), "0.0");
+  assert.equal(C.fmt(NaN), "–");
 });
