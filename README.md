@@ -46,6 +46,11 @@ Her proses kartı iki katmanlıdır:
   sarı bir kutuda gösterilir (en fazla 3 satır). Not varsa sayfaya sığması için tespit
   gerekçesi raporda atlanır; ekranda ve mühendislik detaylarında görünmeye devam eder.
 
+### Renkler
+
+Arayüz ve rapor şirket renklerini kullanır: füme / siyah ana tonlar, sarı yalnızca ince vurgu
+(sekme alt çizgisi, kutu üst şeridi, seçili satır). Şemalar ve tip görselleri mavi kalır.
+
 ### Sayı biçimi
 
 Ondalık ayırıcı nokta, binlik ayırıcı üst tırnaktır: `45'000 rpm`, `2'470.0 g`, `0.0765 g·mm`.
