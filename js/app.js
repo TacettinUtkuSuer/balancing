@@ -234,7 +234,7 @@
           : `<span class="bad">Eksik tanım</span>`;
         return `<li class="proc-item ${p.id === state.ui.activeProcessId ? "active" : ""}" data-action="select-proc" data-id="${p.id}">
           <span class="num">${i + 1}</span>
-          <span><div class="t">${esc(p.name || `Proses ${i + 1}`)}${p.optional ? ` <span class="opt-tag">opsiyonel</span>` : ""}</div><div class="s">${sub}</div></span></li>`;
+          <span><div class="t"><span class="nm">${esc(p.name || `Proses ${i + 1}`)}</span>${p.optional ? `<span class="opt-tag">opsiyonel</span>` : ""}</div><div class="s">${sub}</div></span></li>`;
       })
       .join("");
   }

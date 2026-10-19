@@ -15,10 +15,14 @@
   const INK = [31, 42, 51];
   const MUTED = [100, 116, 139]; // ikincil bilgiler
   const LABEL = [51, 65, 85]; // önemli etiketler (baskıda okunur kalsın)
-  const ACCENT = [13, 71, 161];
-  const ACCENT_BG = [237, 245, 253];
   const LINE = [195, 202, 211];
-  const AMBER = [180, 83, 9]; // opsiyonel adım
+  // Şirket renkleri: füme / siyah ana tonlar, sarı yalnızca ince vurgu (şema mavi kalır)
+  const CHAR = [43, 47, 51];
+  const BLACK = [17, 17, 17];
+  const YELLOW = [242, 183, 5];
+  const YELLOW_SOFT = [255, 244, 209];
+  const PAPER = [250, 250, 248];
+  const AMBER = [150, 90, 0]; // opsiyonel adım
   const NOTE_BG = [255, 249, 225];
   const NOTE_LINE = [217, 170, 60];
 
@@ -124,33 +128,33 @@
     const R = procs.map((p) => ({ p, r: C.computeProcess(state, p) }));
     const nOpt = procs.filter((p) => p.optional).length;
     const rotorName = m.rotorId || m.rotorModel || "Rotor";
-    const totalMass = state.parts.reduce((a, pt) => a + (C.num(pt.mass) > 0 ? C.num(pt.mass) : 0), 0);
     const g = state.global;
 
     // Kapak çerçevesi ve başlık bandı
     const FX = 8;
     const FW = PAGE_W - 2 * FX;
     const bandH = 40;
-    doc.setFillColor(...ACCENT);
+    doc.setFillColor(...CHAR);
     doc.roundedRect(FX, FX, FW, bandH, 3, 3, "F");
     doc.rect(FX, FX + 4, FW, bandH - 4, "F");
-    txt("BALANS PROSES ÖZETİ", M, FX + 9, { size: 9, bold: true, color: [187, 214, 247] });
+    doc.setFillColor(...YELLOW);
+    doc.rect(FX, FX + bandH, FW, 1.4, "F");
+    // Bantta yalnızca proje başlığı
     {
       const title = (m.title || "").trim() || rotorName;
       doc.setFont(font.name, "bold");
-      doc.setFontSize(20);
+      doc.setFontSize(22);
       let lines = doc.splitTextToSize(T(title), CW);
-      if (lines.length > 2) lines = [lines[0], fit(lines.slice(1).join(" "), CW, 20, true)];
+      if (lines.length > 2) lines = [lines[0], fit(lines.slice(1).join(" "), CW, 22, true)];
       doc.setTextColor(255, 255, 255);
-      const ty = lines.length === 1 ? FX + 22 : FX + 18.5;
-      lines.forEach((l, i) => doc.text(l, M, ty + i * 8.5));
+      const ty = lines.length === 1 ? FX + bandH / 2 + 3 : FX + bandH / 2 - 1.5;
+      lines.forEach((l, i) => doc.text(l, M, ty + i * 9));
     }
-    txt(fit([m.rotorId, m.rotorModel].filter(Boolean).join("  ·  ") || " ", CW, 9.5), M, FX + bandH - 4.5, { size: 9.5, color: [220, 233, 250] });
-    doc.setDrawColor(...ACCENT);
+    doc.setDrawColor(...CHAR);
     doc.setLineWidth(0.8);
     doc.roundedRect(FX, FX, FW, PAGE_H - 2 * FX, 3, 3, "S");
 
-    const ky = FX + bandH + 8;
+    const ky = FX + bandH + 9;
     kv(
       [
         ["Sipariş no", m.orderNo || "–"],
@@ -197,35 +201,29 @@
           `tercihe bağlıdır; gerekli görülmezse atlanabilir.`
       );
 
-    // Ürün: şema + birkaç temel bilgi
+    // Ürün: tam genişlikte rotor şeması + nominal hız
     y += 2;
     section("Rotor", y);
     y += 4;
-    const schH = 46;
-    const schW = CW * 0.64;
-    box(M, y, schW, schH, [255, 255, 255]);
-    S.toPDF(doc, S.build(state, { w: 600, h: 230, print: true }), M + 1.5, y + 1.5, schW - 3, schH - 3, font.name);
-    const ix = M + schW + 6;
-    [
-      ["Parça sayısı", `${state.parts.length}`],
-      ["Toplam kütle", `${f(totalMass, 1)} g`],
-      ["Servis hızı", `${f(C.num(g.serviceSpeed), 0)} rpm`],
-      ["Kalite sınıfı", `G ${C.fmtAuto(C.num(g.G), 2)}`],
-    ].forEach(([k, v], i) => {
-      txt(k, ix, y + 7 + i * 10, { size: 8.5, color: LABEL });
-      txt(v, ix, y + 12 + i * 10, { size: 12, bold: true });
-    });
-    y += schH + 9;
+    const schH = 62;
+    box(M, y, CW, schH, [255, 255, 255]);
+    S.toPDF(doc, S.build(state, { w: Math.round((240 * (CW - 3)) / (schH - 3)), h: 240, print: true }), M + 1.5, y + 1.5, CW - 3, schH - 3, font.name);
+    y += schH + 5;
+    txt("Nominal (servis) hızı:", M + 2, y, { size: 9.5, color: LABEL });
+    doc.setFont(font.name, "normal");
+    doc.setFontSize(9.5);
+    txt(`${f(C.num(g.serviceSpeed), 0)} rpm`, M + 4 + doc.getTextWidth(T("Nominal (servis) hızı:")), y, { size: 10, bold: true, color: BLACK });
+    y += 9;
 
     // Adımlar
     section("Proses adımları", y);
     y += 4;
     const cols = [
       { h: "Adım", w: 19, a: "left" },
-      { h: "Proses", w: 40, a: "left" },
-      { h: "Montajdaki parçalar", w: 33, a: "left" },
-      { h: "Balans", w: 44, a: "left" },
-      { h: "İzin verilen artık kütle", w: CW - 136, a: "right" },
+      { h: "Proses", w: CW - 19 - 28 - 26 - 34, a: "left" },
+      { h: "Düzlem", w: 28, a: "left" },
+      { h: "Kalite", w: 26, a: "right" },
+      { h: "Toplam kütle", w: 34, a: "right" },
     ];
     const rowH = 7;
     const footerY = PAGE_H - 19; // kapak çerçevesinin içinde
@@ -245,17 +243,18 @@
         doc.setFillColor(248, 250, 252);
         doc.rect(M, y, CW, rowH, "F");
       }
-      const parts = state.parts.filter((pt) => p.partIds.includes(pt.id)).map((pt) => pt.name).join(", ") || "–";
-      const how = r.valid ? `${r.nPlanes} düzlem · ${r.type.nameEn}` : `${p.planes === 1 ? 1 : 2} düzlem`;
-      const tol = r.valid ? r.planes.map((pl, k) => `${r.nPlanes === 1 ? "" : `D${k + 1} `}${C.fmtMass(pl.m)}`).join("  ") : "tanım eksik";
-      const vals = [String(state.processes.indexOf(p) + 1), p.name || "–", parts, how, tol];
+      const vals = [
+        String(state.processes.indexOf(p) + 1),
+        p.name || "–",
+        `${p.planes === 1 ? 1 : 2} düzlem`,
+        Number.isFinite(r.params.G) ? `G ${C.fmtAuto(r.params.G, 2)}` : "–",
+        r.mass > 0 ? `${f(r.mass, 1)} g` : "–",
+      ];
       let x = M;
-      if (p.optional) pill(M + 7, y + 4.6, "OPS.", [255, 237, 204], AMBER, 7);
+      if (p.optional) pill(M + 7, y + 4.6, "OPS.", YELLOW_SOFT, BLACK, 7);
       cols.forEach((c, j) => {
-        const bold = j === 1 || j === 4;
-        txt(fit(vals[j], c.w - 4, 9, bold), c.a === "right" ? x + c.w - 2 : x + 2, y + 4.8, {
-          size: 9, bold, align: c.a, color: j === 4 && !r.valid ? [198, 40, 40] : INK,
-        });
+        const bold = j === 1 || j === 3;
+        txt(fit(vals[j], c.w - 4, 9.5, bold), c.a === "right" ? x + c.w - 2 : x + 2, y + 4.8, { size: 9.5, bold, align: c.a, color: INK });
         x += c.w;
       });
       y += rowH;
@@ -296,7 +295,7 @@
       doc.setFont(font.name, "normal");
       doc.setFontSize(22);
       const tw = doc.getTextWidth(T("Balans Raporu"));
-      pill(M + tw + 5, 19, "OPSİYONEL ADIM – yapılması tercihe bağlı", [255, 237, 204], AMBER, 8.5);
+      pill(M + tw + 5, 19, "OPSİYONEL ADIM – yapılması tercihe bağlı", YELLOW_SOFT, BLACK, 8.5);
     }
     txt(`Proses ${stepNo} / ${stepTotal}`, PAGE_W - M, 20, { size: 9, color: MUTED, align: "right" });
     hline(23, M, PAGE_W - M, 0.6);
@@ -330,7 +329,7 @@
       if (lines.length > 3) lines = [...lines.slice(0, 2), fit(lines.slice(2).join(" "), CW - 30, 9.5)];
       const nh = 4 + lines.length * 4.3;
       box(M, 41.5, CW, nh, NOTE_BG, NOTE_LINE, 0.5);
-      txt("PROSES NOTU", M + 3, 46.3, { size: 8, bold: true, color: AMBER });
+      txt("PROSES NOTU", M + 3, 46.3, { size: 8, bold: true, color: BLACK });
       doc.setFont(font.name, "normal");
       doc.setFontSize(9.5);
       doc.setTextColor(...INK);
@@ -338,43 +337,50 @@
       y = 41.5 + nh + 7;
     }
 
-    // ---------------- Hızlı bakış
-    section("Tip verisi ve hızlı bakış", y);
-    y += 4;
-    const topH = note ? 48 : 54; // not varsa sayfaya sığması için biraz kısalır
-    // Sol: temsil görseli + tip adı
-    const leftW = 58;
-    box(M, y, leftW, topH, [255, 255, 255]);
+    // ---------------- Üst sıra: tip görseli + ana parametreler (kütle, G, hız)
+    const pr = r.params;
+    const src = (k) => (pr.sources[k] === "process" ? "prosese özel" : "genel");
+    const topRowH = note ? 34 : 38;
+    const leftW = 62;
+    box(M, y, leftW, topRowH, [255, 255, 255]);
     if (r.valid) {
       const art = root.TypeArt.build(r.type.key);
-      const iw = leftW - 4;
-      const ih = Math.min(42, (iw * art.h) / art.w);
-      S.toPDF(doc, art, M + 2, y + 2, iw, ih, font.name);
-      txt(fit(r.type.name, leftW - 4, 10.5, true), M + leftW / 2, y + ih + 7, { size: 10.5, bold: true, color: ACCENT, align: "center" });
-      txt(`${r.type.nameEn} · otomatik tespit`, M + leftW / 2, y + ih + 11.5, { size: 7.5, color: MUTED, align: "center" });
+      const iw = leftW - 6;
+      const ih = Math.min(topRowH - 12, (iw * art.h) / art.w);
+      S.toPDF(doc, art, M + 3, y + 1.5, iw, ih, font.name);
+      txt(fit(r.type.name, leftW - 4, 10, true), M + leftW / 2, y + topRowH - 5.2, { size: 10, bold: true, color: CHAR, align: "center" });
+      txt(`${r.type.nameEn} · otomatik tespit`, M + leftW / 2, y + topRowH - 1.8, { size: 6.8, color: MUTED, align: "center" });
     } else {
-      txt("Tip belirlenemedi", M + leftW / 2, y + topH / 2, { size: 10, color: MUTED, align: "center" });
+      txt("Tip belirlenemedi", M + leftW / 2, y + topRowH / 2, { size: 10, color: MUTED, align: "center" });
     }
-    // Sağ: şema
-    const schX = M + leftW + 4;
-    const schW = CW - leftW - 4;
-    box(schX, y, schW, topH, [255, 255, 255]);
-    const sch = S.build(state, { process: p, result: r, w: 540, h: 240, print: true });
-    S.toPDF(doc, sch, schX + 1.5, y + 1.5, schW - 3, topH - 3, font.name);
-    y += topH + 4;
+    const chips = [
+      ["Rotor kütlesi", `${f(r.mass, 1)} g`, `X_cg = ${f(r.xcg, 1)} mm`],
+      ["Kalite sınıfı", `G ${fa(pr.G, 2)}`, src("G")],
+      ["Servis hızı", `${f(pr.serviceSpeed, 0)} rpm`, src("serviceSpeed")],
+    ];
+    const chX = M + leftW + 4;
+    const chW = CW - leftW - 4;
+    const chH = (topRowH - 4) / 3;
+    chips.forEach(([k, v, sub], i) => {
+      const cy = y + i * (chH + 2);
+      box(chX, cy, chW, chH, [255, 255, 255], CHAR, 0.6);
+      doc.setFillColor(...YELLOW);
+      doc.rect(chX + 0.3, cy + 1.2, 1.8, chH - 2.4, "F");
+      txt(k, chX + 6, cy + chH / 2 + 0.2, { size: 10, bold: true, color: CHAR });
+      txt(sub, chX + 6, cy + chH / 2 + 3.6, { size: 6.8, color: MUTED });
+      txt(v, chX + chW - 5, cy + chH / 2 + 2.3, { size: 16, bold: true, color: BLACK, align: "right" });
+    });
+    y += topRowH + 4;
 
-    // Tespit gerekçesi (en fazla 3 satır)
+    // ---------------- Şema (tam genişlik)
+    const schH = note ? 48 : 54;
+    box(M, y, CW, schH, [255, 255, 255]);
     {
-      // Not varsa yer açmak için gerekçe raporda atlanır (ekranda ve detaylarda durur)
-      const reason = r.valid && !note ? `Tespit gerekçesi: ${r.type.reason}` : "";
-      doc.setFont(font.name, "normal");
-      doc.setFontSize(8);
-      let lines = reason ? doc.splitTextToSize(T(reason), CW) : [];
-      if (lines.length > 3) lines = [...lines.slice(0, 2), fit(lines.slice(2).join(" "), CW, 8)];
-      doc.setTextColor(...MUTED);
-      lines.forEach((l, i) => doc.text(l, M, y + 3 + i * 3.4));
+      const H = 256;
+      const sch = S.build(state, { process: p, result: r, w: Math.round((H * (CW - 3)) / (schH - 3)), h: H, print: true });
+      S.toPDF(doc, sch, M + 1.5, y + 1.5, CW - 3, schH - 3, font.name);
     }
-    y += note ? 2 : 11;
+    y += schH + 4;
 
     // ---------------- Tolerans kutuları (g ve g·mm)
     const tolH = 34;
@@ -384,56 +390,40 @@
       const bw = n === 1 ? (CW - gap) * 0.62 : (CW - gap) / 2;
       r.planes.forEach((pl, i) => {
         const bx = M + i * (bw + gap);
-        box(bx, y, bw, tolH, ACCENT_BG, ACCENT, 0.9);
-        txt(n === 1 ? "DÜZLEM (STATİK)" : `DÜZLEM ${i + 1}`, bx + 4, y + 5.5, { size: 8.5, bold: true, color: ACCENT });
-        txt(fit(`${pl.point.name} · ${pl.part.name}`, bw - 8, 7.5), bx + 4, y + 9.5, { size: 7.5, color: LABEL });
+        box(bx, y, bw, tolH, PAPER, CHAR, 0.9);
+        doc.setFillColor(...YELLOW);
+        doc.rect(bx + 4, y + 2.6, 10, 1, "F");
+        txt(n === 1 ? "DÜZLEM (STATİK)" : `DÜZLEM ${i + 1}`, bx + 4, y + 8, { size: 8.5, bold: true, color: BLACK });
+        txt(fit(`${pl.point.name} · ${pl.part.name}`, bw - 40, 7.5), bx + bw - 4, y + 8, { size: 7.5, color: LABEL, align: "right" });
         const rLbl = `Yarıçap r${n === 1 ? "" : i + 1} = `;
-        txt(rLbl, bx + 4, y + 14.5, { size: 10, color: LABEL });
+        txt(rLbl, bx + 4, y + 14, { size: 10, color: LABEL });
         doc.setFont(font.name, "normal");
         doc.setFontSize(10);
-        txt(`${f(pl.r, 1)} mm`, bx + 4 + doc.getTextWidth(T(rLbl)), y + 14.5, { size: 10.5, bold: true });
+        txt(`${f(pl.r, 1)} mm`, bx + 4 + doc.getTextWidth(T(rLbl)), y + 14, { size: 10.5, bold: true, color: BLACK });
         const mp = C.massParts(pl.m);
-        txt(mp.v, bx + 4, y + 25, { size: 26, bold: true });
+        txt(mp.v, bx + 4, y + 25, { size: 26, bold: true, color: BLACK });
         doc.setFont(font.name, "bold");
         doc.setFontSize(26);
         const wNum = doc.getTextWidth(T(mp.v));
         txt(mp.unit, bx + 5.5 + wNum, y + 25, { size: 13, bold: true, color: LABEL });
-        txt(`${fa(pl.U)} g·mm`, bx + bw - 4, y + 25, { size: 14, bold: true, align: "right" });
+        txt(`${fa(pl.U)} g·mm`, bx + bw - 4, y + 25, { size: 14, bold: true, color: BLACK, align: "right" });
         txt("izin verilen artık kütle", bx + 4, y + 30.5, { size: 6.8, color: MUTED });
         txt("izin verilen artık dengesizlik", bx + bw - 4, y + 30.5, { size: 6.8, color: MUTED, align: "right" });
       });
       if (n === 1) {
         const bx = M + bw + gap;
         const w2 = CW - bw - gap;
-        box(bx, y, w2, tolH, [248, 250, 252]);
-        txt("TOPLAM U_per", bx + 4, y + 5.5, { size: 8.5, bold: true, color: LABEL });
-        txt(`${fa(r.Uper)} g·mm`, bx + 4, y + 18, { size: 16, bold: true });
-        txt(`e_per = ${fa(r.eper * 1000)} µm`, bx + 4, y + 25, { size: 8, color: MUTED });
+        box(bx, y, w2, tolH, [255, 255, 255]);
+        txt("TOPLAM U_per", bx + 4, y + 8, { size: 8.5, bold: true, color: LABEL });
+        txt(`${fa(r.Uper)} g·mm`, bx + 4, y + 20, { size: 16, bold: true, color: BLACK });
+        txt(`e_per = ${fa(r.eper * 1000)} µm`, bx + 4, y + 27, { size: 8, color: MUTED });
       }
     } else {
       box(M, y, CW, tolH, [253, 236, 234], [198, 40, 40], 0.5);
       txt("Hesap yapılamadı – eksik veya hatalı tanım:", M + 4, y + 6, { size: 9, bold: true, color: [198, 40, 40] });
       r.errors.slice(0, 5).forEach((e, i) => txt(fit(`• ${e}`, CW - 8, 8), M + 4, y + 11 + i * 3.8, { size: 8, color: [198, 40, 40] }));
     }
-    y += tolH + 4;
-
-    // ---------------- Ana parametreler (kütle ve G vurgulu; balans hızı yalnızca referans)
-    const pr = r.params;
-    const src = (k) => (pr.sources[k] === "process" ? "prosese özel" : "genel");
-    const chips = [
-      ["Rotor kütlesi", `${f(r.mass, 1)} g`, `X_cg = ${f(r.xcg, 1)} mm`, true],
-      ["Kalite sınıfı", `G ${fa(pr.G, 2)}`, src("G"), true],
-      ["Servis hızı", `${f(pr.serviceSpeed, 0)} rpm`, src("serviceSpeed"), false],
-    ];
-    const cw = (CW - 2 * 3) / 3;
-    chips.forEach(([k, v, s, strong], i) => {
-      const bx = M + i * (cw + 3);
-      box(bx, y, cw, 13, strong ? [255, 255, 255] : [248, 250, 252], strong ? [96, 125, 139] : LINE, strong ? 0.6 : 0.3);
-      txt(k, bx + 3, y + 4.4, { size: 7.5, color: LABEL, bold: strong });
-      txt(v, bx + 3, y + 10.6, { size: strong ? 13 : 11, bold: true });
-      txt(fit(s, cw / 2 - 3, 6.5), bx + cw - 3, y + 4.4, { size: 6.5, color: MUTED, align: "right" });
-    });
-    y += 13 + 6;
+    y += tolH + 7;
 
     // ---------------- Balans geometrisi + ISO 21940-11 hesabı
     const colW = CW / 2;
@@ -497,7 +487,7 @@
       y += gh;
       grades.forEach((g) => {
         if (g.current) {
-          doc.setFillColor(...ACCENT_BG);
+          doc.setFillColor(...YELLOW_SOFT);
           doc.rect(M, y, CW, gh, "F");
         }
         const tag = g.current ? `  (seçili${g.standard ? "" : " · standart dışı"})` : "";
@@ -505,7 +495,7 @@
         let cx3 = M;
         vals.forEach((v, j) => {
           txt(fit(v, gcols[j] - 3, 8, g.current), j === 0 ? cx3 + 1.5 : cx3 + gcols[j] - 1.5, y + gh - 1.1, {
-            size: 8, bold: g.current, color: g.current ? (j === 0 ? ACCENT : INK) : LABEL, align: j === 0 ? "left" : "right",
+            size: 8, bold: g.current, color: g.current ? BLACK : LABEL, align: j === 0 ? "left" : "right",
           });
           cx3 += gcols[j];
         });
@@ -517,7 +507,16 @@
 
     // ---------------- Kompakt detay tablosu (kalan alana sığdırılır)
     const footerY = PAGE_H - 12;
-    const tableBottom = footerY - 10; // yatak satırı için yer
+    // Tespit gerekçesi (ikincil bilgi) sayfanın altında; not varsa yer açmak için atlanır
+    let reasonLines = [];
+    if (r.valid && !note) {
+      doc.setFont(font.name, "normal");
+      doc.setFontSize(7.2);
+      reasonLines = doc.splitTextToSize(T(`Tespit gerekçesi: ${r.type.reason}`), CW);
+      if (reasonLines.length > 2) reasonLines = [reasonLines[0], fit(reasonLines.slice(1).join(" "), CW, 7.2)];
+    }
+    const reasonY = footerY - 2.2 - (reasonLines.length - 1) * 3.1;
+    const tableBottom = (reasonLines.length ? reasonY - 4 : footerY) - 10; // yatak satırı için yer
     txt("Parça listesi ve referans yataklar", M, y, { size: 11 });
     hline(y + 1.2, M, PAGE_W - M, 0.25);
     y += 3.5;
@@ -590,7 +589,13 @@
     const brg = state.bearings
       .map((b) => `${b.name}: x = ${f(C.num(b.x), 1)} mm${p.bearingIds.includes(b.id) ? " (referans)" : ""}`)
       .join("   ·   ");
-    txt(fit(`Yataklar — ${brg || "tanımsız"}`, CW, 8), M, Math.min(y + 4.5, footerY - 4), { size: 8 });
+    txt(fit(`Yataklar — ${brg || "tanımsız"}`, CW, 8), M, Math.min(y + 4.5, tableBottom + 6), { size: 8 });
+    if (reasonLines.length) {
+      doc.setFont(font.name, "normal");
+      doc.setFontSize(7.2);
+      doc.setTextColor(...MUTED);
+      reasonLines.forEach((l, i) => doc.text(l, M, reasonY + i * 3.1));
+    }
 
     // ---------------- Alt bilgi
     hline(footerY, M, PAGE_W - M, 0.3, LINE);
