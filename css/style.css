@@ -231,9 +231,15 @@ pre.raw { max-height: 260px; overflow: auto; font-size: 11.5px; background: var(
 .det-grid > div { min-width: 0; overflow-x: auto; }
 
 /* Opsiyonel proses ve not */
-.opt-tag { font-size: 10.5px; font-weight: 700; color: #b45309; background: #fff4e0; border-radius: 4px; padding: 1px 5px; margin-left: 4px; vertical-align: 1px; }
-.chip.opt-chip.on { background: #fff4e0; border-color: #d97706; color: #b45309; }
+.opt-tag { font-size: 10px; font-weight: 800; letter-spacing: 0.04em; color: #fff; background: var(--accent); border-left: 3px solid var(--brand-yellow); border-radius: 3px; padding: 1px 6px; margin-left: 4px; vertical-align: 1px; }
+.chip.opt-chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
 textarea.note-input { width: 100%; resize: vertical; min-height: 52px; padding: 6px 8px; border: 1px solid var(--border-strong); border-radius: 6px; font: inherit; }
 .fields .span-all { grid-column: 1 / -1; }
-.alert.opt { background: #fff4e0; color: #92400e; border: 1px solid #f5c98b; }
+.alert.opt { background: var(--accent-soft); color: var(--text); border: 2px dashed var(--accent); font-weight: 600; }
+.alert.opt .opt-tag { margin: 0 6px 0 0; }
+/* Opsiyonel adım: kesikli çerçeve ve hafif çizgili zemin ile ayrışır */
+.card.is-opt { border: 2px dashed var(--accent); }
+.card.is-opt .tol { border-style: dashed; }
+.proc-item.opt { border: 1.5px dashed #8a8f94; background: repeating-linear-gradient(135deg, #fffaf0 0 8px, #fff4d6 8px 16px); }
+.proc-item.opt.active { border-color: var(--accent); }
 .alert.note { background: #fffbea; color: #3f3a1e; border: 1px solid #ecd98a; }

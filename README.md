@@ -39,9 +39,11 @@ Her proses kartı iki katmanlıdır:
 
 * **Proje başlığı** (Rotor Tanımı → Rapor bilgileri): tüm iş için tek metin; özet sayfasının
   başlık bandında büyük olarak gösterilir.
-* **Opsiyonel** anahtarı (proses kartının başlığında): adım tercihe bağlı olarak işaretlenir.
-  Proses listesinde ve özet panelinde rozetle, raporda başlıkta "OPSİYONEL ADIM" rozetiyle,
-  özet sayfasındaki tabloda "OPS." etiketiyle ve açıklama cümlesiyle belirtilir.
+* **Opsiyonel** anahtarı (proses kartının başlığında): adım tercihe bağlı olarak işaretlenir ve
+  her yerde zorunlu adımlardan ayrışır: arayüzde kesikli çerçeveli kart ve çizgili liste satırı,
+  koyu "OPSİYONEL" rozeti; raporda başlıkta koyu "OPSİYONEL ADIM" rozeti, kesikli sayfa çerçevesi,
+  sol kenarda dikey "OPSİYONEL ADIM" şeridi, kesikli tolerans kutuları; özet tablosunda kesikli
+  çerçeveli satır ve rozet.
 * **Proses notu** (Proses ayarları): raporda o prosesin sayfasında, başlığın hemen altında
   sarı bir kutuda gösterilir (en fazla 3 satır). Not varsa sayfaya sığması için tespit
   gerekçesi raporda atlanır; ekranda ve mühendislik detaylarında görünmeye devam eder.
