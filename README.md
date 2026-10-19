@@ -1,7 +1,7 @@
-# Kademeli Şaft Balans Hesabı
+# Balans Talimatnamesi
 
 Kademeli (montaj adımlı) şaft / rotor balansı için **ISO 21940-11** tolerans hesabı yapan,
-rotor tipini **otomatik tespit eden** ve her proses için **tam 1 sayfalık PDF raporu** üreten
+rotor tipini **otomatik tespit eden** ve her proses adımı için **tam 1 sayfalık balans talimatı** üreten
 statik web uygulaması. Sunucu, veri tabanı veya derleme adımı gerektirmez; tüm hesap,
 görselleştirme ve PDF üretimi tarayıcıda yapılır.
 
@@ -37,9 +37,13 @@ Her proses kartı iki katmanlıdır:
   dengesi / yatak yükleri, ISO 21940-11 formül adımları, yatak payları, düzlem transferi ve
   ham parametreler.
 
-### Proje başlığı, opsiyonel adımlar ve notlar
+### Doküman bilgileri, opsiyonel adımlar ve notlar
 
-* **Proje başlığı** (Rotor tanımı → Rapor bilgileri): tüm iş için tek metin; özet sayfasının
+* **Doküman bilgileri** (Rotor tanımı bölümünde): *SAT / SAS Kodu*, *Şaft Adı*, *Tanım* (aynı
+  geometrideki varyantı ayırt eden kısa açıklama, ör. çelik / alüminyum gövde), *Hazırlayan /
+  Operatör* ve *Not*. Talimatnamede *Hazırlanma Tarihi* otomatik basılır; *Balans Tarihi* her
+  adım sayfasında elle doldurulmak üzere boş bırakılır.
+* **Başlık** (Doküman bilgileri): tüm iş için tek metin; kapak sayfasının
   başlık bandında büyük olarak gösterilir.
 * **Opsiyonel** anahtarı (proses kartının başlığında): adım tercihe bağlı olarak işaretlenir ve
   her yerde zorunlu adımlardan ayrışır: arayüzde kesikli çerçeveli kart ve çizgili liste satırı,
@@ -79,7 +83,7 @@ hesaplanır). *JSON içe aktar* projeyi eksiksiz geri yükler. Örnek: [`example
 
 ### PDF
 
-*PDF raporu* (tek proses) veya *Tüm raporlar* (her proses bir sayfa). *Tüm raporlar* çıktısının ilk
+*Adım PDF* (tek proses) veya *Talimatname (PDF)* (her proses bir sayfa). Talimatname çıktısının ilk
 sayfası çerçeveli bir kapak / özet olan **Balans Proses Özeti**dir (başlık bandında proje başlığı): ürünün ve yapılacak işin sade bir tanımı (sabit şablon metin),
 rotor şeması ve her adım için montajdaki parçalar, düzlem sayısı / rotor tipi ve izin verilen artık
 kütleyi gösteren tek tablo. Sayfa düzeni referans

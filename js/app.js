@@ -19,7 +19,7 @@
   function emptyState() {
     return {
       schema: SCHEMA,
-      meta: { title: "", orderNo: "", rotorId: "", rotorModel: "", operator: "", direction: "İleri", notes: "" },
+      meta: { title: "", orderNo: "", rotorId: "", rotorModel: "", operator: "", notes: "" },
       global: { serviceSpeed: null, balanceSpeed: null, G: 2.5 },
       parts: [],
       bearings: [],
@@ -30,7 +30,7 @@
 
   function exampleState() {
     const s = emptyState();
-    s.meta = { title: "Pompa rotoru kademeli montaj balansı", orderNo: "00001", rotorId: "POMPA ROTORU 1", rotorModel: "ANOVA", operator: "", direction: "İleri", notes: "Örnek: 3 kademeli montaj balansı" };
+    s.meta = { title: "Pompa rotoru kademeli montaj balansı", orderNo: "SAT-00001", rotorId: "POMPA ROTORU 1", rotorModel: "Çelik çark", operator: "", notes: "Örnek: 3 kademeli montaj balansı" };
     s.global = { serviceSpeed: 7200, balanceSpeed: 2000, G: 1.6 };
     const shaft = { id: "p-saft", name: "Şaft", mass: 315, x: 67.5, points: [{ id: "pt-s1", name: "Ş-orta", x: 67.5, r: 8 }] };
     const hub = { id: "p-gobek", name: "Göbek", mass: 500, x: 40, points: [{ id: "pt-g1", name: "G-ön", x: 23, r: 20 }] };
@@ -57,6 +57,7 @@
     if (!Array.isArray(raw.parts) || !Array.isArray(raw.processes)) throw new Error("Dosya bu uygulamaya ait bir proje değil (parts / processes bulunamadı).");
     const s = emptyState();
     Object.assign(s.meta, raw.meta || {});
+    delete s.meta.direction; // eski sürümlerden kalan, artık kullanılmayan alan
     for (const k of ["serviceSpeed", "balanceSpeed", "G"]) s.global[k] = numOrNull(raw.global?.[k]);
     s.parts = raw.parts.map((p) => ({
       id: String(p.id || uid()),
@@ -132,16 +133,15 @@
     return `
     <div class="grid def-grid">
       <section class="card">
-        <div class="card-h"><h2>Rapor bilgileri</h2></div>
+        <div class="card-h"><h2>Doküman bilgileri</h2><span class="hint">Talimatnamenin başlık alanları</span></div>
         <div class="card-b fields">
-          <label class="field span-all"><span>Proje başlığı <span class="unit">(tüm iş için; özet sayfasında başlık olarak görünür)</span></span><input data-f="meta.title" value="${esc(m.title)}" placeholder="Örn. E-motor rotoru kademeli balans planı" /></label>
-          <label class="field"><span>Sipariş no</span><input data-f="meta.orderNo" value="${esc(m.orderNo)}" /></label>
-          <label class="field"><span>Rotor ID</span><input data-f="meta.rotorId" value="${esc(m.rotorId)}" /></label>
-          <label class="field"><span>Rotor modeli</span><input data-f="meta.rotorModel" value="${esc(m.rotorModel)}" /></label>
-          <label class="field"><span>Dönüş yönü</span>
-            <select data-f="meta.direction">${["İleri", "Geri"].map((d) => `<option ${m.direction === d ? "selected" : ""}>${d}</option>`).join("")}</select></label>
-          <label class="field"><span>Hazırlayan / operatör</span><input data-f="meta.operator" value="${esc(m.operator)}" /></label>
-          <label class="field"><span>Not</span><input data-f="meta.notes" value="${esc(m.notes)}" /></label>
+          <label class="field span-all"><span>Başlık <span class="unit">(tüm iş için; kapak sayfasında görünür)</span></span><input data-f="meta.title" value="${esc(m.title)}" placeholder="Örn. E-motor rotoru kademeli balans planı" /></label>
+          <label class="field"><span>SAT / SAS Kodu</span><input data-f="meta.orderNo" value="${esc(m.orderNo)}" placeholder="Örn. SAT-2026-0142" /></label>
+          <label class="field"><span>Şaft Adı</span><input data-f="meta.rotorId" value="${esc(m.rotorId)}" placeholder="Örn. E-motor rotoru" /></label>
+          <label class="field span-all"><span>Tanım <span class="unit">(aynı geometrideki varyantı ayırt eden kısa açıklama)</span></span><input data-f="meta.rotorModel" value="${esc(m.rotorModel)}" placeholder="Örn. Çelik gövde / Alüminyum gövde" /></label>
+          <label class="field"><span>Hazırlayan / Operatör</span><input data-f="meta.operator" value="${esc(m.operator)}" /></label>
+          <label class="field"><span>Not</span><input data-f="meta.notes" value="${esc(m.notes)}" placeholder="Talimatnameye genel not" /></label>
+          <p class="hint span-all">Hazırlanma tarihi talimatnamede otomatik basılır; balans tarihi alanı elle doldurulmak üzere boş bırakılır.</p>
         </div>
       </section>
       <section class="card">
@@ -258,7 +258,7 @@
           <button type="button" class="btn small icon" data-action="move-proc" data-dir="1" ${idx === state.processes.length - 1 ? "disabled" : ""} title="Aşağı taşı">↓</button>
           <button type="button" class="btn small" data-action="dup-proc">Kopyala</button>
           <button type="button" class="btn small danger" data-action="del-proc">Sil</button>
-          <button type="button" class="btn small primary" data-action="pdf-one">PDF raporu</button>
+          <button type="button" class="btn small primary" data-action="pdf-one">Adım PDF</button>
         </div>
       </div>
       <div class="card-b" data-live="summary">${renderSummary(p, r)}</div>
@@ -786,7 +786,7 @@ ABC: a = ${f(r.abc.a, 2)}, b = ${f(r.abc.b, 2)}, c = ${f(r.abc.c, 2)} mm</div>`;
     if (!ids.length) return toast("Rapor için proses yok.");
     try {
       const doc = window.Report.generate(state, ids, opts);
-      const suffix = ids.length === 1 ? `_${(findProc(ids[0]).name || "proses").replace(/[^\p{L}\p{N}_-]+/gu, "_")}` : "_tum_prosesler";
+      const suffix = ids.length === 1 ? `_${(findProc(ids[0]).name || "proses").replace(/[^\p{L}\p{N}_-]+/gu, "_")}` : "_talimatname";
       doc.save(`${fileStamp()}${suffix}.pdf`);
     } catch (err) {
       console.error(err);

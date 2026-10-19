@@ -60,7 +60,7 @@
       const r = C.computeProcess(state, p);
       drawPage(doc, font, state, p, r, state.processes.indexOf(p) + 1, total, i + 1 + offset, pageCount);
     });
-    doc.setProperties({ title: `Balans Raporu – ${state.meta.rotorId || ""}`, subject: "ISO 21940-11 balans toleransı", creator: "Kademeli Şaft Balans Hesabı" });
+    doc.setProperties({ title: `Balans Talimatnamesi – ${state.meta.rotorId || ""}`, subject: "ISO 21940-11 balans talimatı", creator: "Balans Talimatnamesi" });
     return doc;
   }
 
@@ -130,7 +130,7 @@
     const dateStr = new Date().toLocaleString("tr-TR", { dateStyle: "short", timeStyle: "short" });
     const R = procs.map((p) => ({ p, r: C.computeProcess(state, p) }));
     const nOpt = procs.filter((p) => p.optional).length;
-    const rotorName = m.rotorId || m.rotorModel || "Rotor";
+    const rotorName = m.rotorId || "şaft";
     const g = state.global;
 
     // Kapak çerçevesi ve başlık bandı
@@ -160,23 +160,35 @@
     const ky = FX + bandH + 9;
     kv(
       [
-        ["Sipariş no", m.orderNo || "–"],
-        ["Rotor ID", m.rotorId || "–", true],
-        ["Rotor modeli", m.rotorModel || "–"],
+        ["SAT / SAS Kodu", m.orderNo || "–"],
+        ["Şaft Adı", m.rotorId || "–", true],
+        ["Tanım", fit(m.rotorModel || "–", 60, 9)],
       ],
-      M + 4, ky, 28
+      M + 4, ky, 30
     );
     kv(
       [
-        ["Rapor tarihi", dateStr],
-        ["Proses adımı", nOpt ? `${procs.length}  (${nOpt} opsiyonel)` : `${procs.length}`, true],
-        ["Hazırlayan", m.operator || "–"],
+        ["Hazırlanma Tarihi", dateStr],
+        ["Proses Adımı", nOpt ? `${procs.length}  (${nOpt} opsiyonel)` : `${procs.length}`, true],
+        ["Hazırlayan / Operatör", fit(m.operator || "–", 40, 9)],
       ],
-      112, ky, 28
+      112, ky, 38
     );
 
-    // Ne yapılacak?
+    // Genel not (varsa)
     let y = ky + 19;
+    if ((m.notes || "").trim()) {
+      txt("Not", M + 4, y - 4, { size: 9, color: LABEL });
+      doc.setFont(font.name, "normal");
+      doc.setFontSize(9);
+      let nl = doc.splitTextToSize(T(m.notes.trim()), CW - 38);
+      if (nl.length > 2) nl = [nl[0], fit(nl.slice(1).join(" "), CW - 38, 9)];
+      doc.setTextColor(...INK);
+      nl.forEach((l, i) => doc.text(l, M + 34, y - 4 + i * 4));
+      y += nl.length * 4 + 1;
+    }
+
+    // Ne yapılacak?
     section("Bu doküman ne anlatıyor?", y);
     y += 7;
     const para = (text, size = 10) => {
@@ -294,9 +306,9 @@
     ].forEach((l, i) => txt(fit(`•  ${l}`, CW, 8.5), M + 2, y + 6 + i * 4.6, { size: 8.5, color: LABEL }));
 
     hline(footerY, M, PAGE_W - M, 0.3, LINE);
-    txt(fit(`Hazırlayan: ${m.operator || "................................"}     Kontrol: ................................     ${m.notes || ""}`, CW - 30, 7.5), M, footerY + 4, { size: 7.5, color: MUTED });
+    txt(fit(`Hazırlayan / Operatör: ${m.operator || "................................"}     Kontrol: ................................     ${m.notes || ""}`, CW - 30, 7.5), M, footerY + 4, { size: 7.5, color: MUTED });
     txt(`Sayfa 1 / ${pageCount}`, PAGE_W - M, footerY + 4, { size: 7.5, color: MUTED, align: "right" });
-    txt(`Kademeli Şaft Balans Hesabı · ISO 21940-11 · ${dateStr}`, M, footerY + 7.5, { size: 6.5, color: MUTED });
+    txt(`Balans Talimatnamesi · ISO 21940-11 · ${dateStr}`, M, footerY + 7.5, { size: 6.5, color: MUTED });
   }
 
   function drawPage(doc, font, state, p, r, stepNo, stepTotal, pageNo, pageCount) {
@@ -322,12 +334,12 @@
     }
 
     // ---------------- Başlık (şablon: "Balancing report")
-    txt("Balans Raporu", M, 20, { size: 22 });
+    txt("Balans Talimatı", M, 20, { size: 22 });
     if (p.optional) {
       // Opsiyonel sayfa: belirgin koyu rozet ve kesikli sayfa çerçevesi
       doc.setFont(font.name, "normal");
       doc.setFontSize(22);
-      const tw = doc.getTextWidth(T("Balans Raporu"));
+      const tw = doc.getTextWidth(T("Balans Talimatı"));
       const pw = pill(M + tw + 5, 19.3, "OPSİYONEL ADIM", CHAR, [255, 255, 255], 11);
       txt("yapılması tercihe bağlıdır", M + tw + 7 + pw, 19.3, { size: 8.5, bold: true, color: CHAR });
       doc.setDrawColor(...CHAR);
@@ -343,20 +355,26 @@
     const dateStr = now.toLocaleString("tr-TR", { dateStyle: "short", timeStyle: "short" });
     kv(
       [
-        ["Sipariş no", m.orderNo || "–"],
-        ["Rotor ID", m.rotorId || "–", true],
-        ["Proses", fit(p.name || `Proses ${stepNo}`, 58, 9, true), true],
+        ["SAT / SAS Kodu", m.orderNo || "–"],
+        ["Şaft Adı", fit(m.rotorId || "–", 58, 9, true), true],
+        ["Tanım", fit(m.rotorModel || "–", 58, 9)],
       ],
-      M + 4, 28.5, 28
+      M + 4, 28.5, 30
     );
     kv(
       [
-        ["Rotor modeli", m.rotorModel || "–"],
-        ["Rapor tarihi", dateStr],
-        ["Dönüş yönü", m.direction || "–"],
+        ["Proses", fit(p.name || `Proses ${stepNo}`, 52, 9, true), true],
+        ["Hazırlanma Tarihi", dateStr],
+        ["Balans Tarihi", ""],
       ],
-      112, 28.5, 28
+      112, 28.5, 32
     );
+    // Balans tarihi: elle doldurulacak boş alan
+    doc.setDrawColor(...CHAR);
+    doc.setLineWidth(0.25);
+    doc.setLineDashPattern([0.6, 0.9], 0);
+    doc.line(112 + 32, 28.5 + 2 * 4.6 + 0.8, PAGE_W - M, 28.5 + 2 * 4.6 + 0.8);
+    doc.setLineDashPattern([], 0);
 
     // ---------------- Proses notu (varsa, başlığın hemen altında)
     let y = rowY;
@@ -662,9 +680,9 @@
 
     // ---------------- Alt bilgi
     hline(footerY, M, PAGE_W - M, 0.3, LINE);
-    txt(fit(`Hazırlayan: ${m.operator || "................................"}     Kontrol: ................................     ${m.notes || ""}`, CW - 30, 7.5), M, footerY + 4, { size: 7.5, color: MUTED });
+    txt(fit(`Hazırlayan / Operatör: ${m.operator || "................................"}     Kontrol: ................................     ${m.notes || ""}`, CW - 30, 7.5), M, footerY + 4, { size: 7.5, color: MUTED });
     txt(`Sayfa ${pageNo} / ${pageCount}`, PAGE_W - M, footerY + 4, { size: 7.5, color: MUTED, align: "right" });
-    txt(`Kademeli Şaft Balans Hesabı · ISO 21940-11 · ${dateStr}`, M, footerY + 7.5, { size: 6.5, color: MUTED });
+    txt(`Balans Talimatnamesi · ISO 21940-11 · ${dateStr}`, M, footerY + 7.5, { size: 6.5, color: MUTED });
   }
 
   root.Report = { generate };
