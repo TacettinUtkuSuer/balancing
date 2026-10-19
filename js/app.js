@@ -24,7 +24,7 @@
       parts: [],
       bearings: [],
       processes: [],
-      ui: { tab: "definition", activeProcessId: null },
+      ui: { defOpen: true, activeProcessId: null },
     };
   }
 
@@ -47,7 +47,7 @@
       { id: "pr-3", name: "Adım 3 – Komple rotor", partIds: ["p-saft", "p-gobek", "p-cark"], bearingIds: ["b-a", "b-b"], planes: 2, pointIds: ["pt-g1", "pt-c1"], overrides: { serviceSpeed: null, balanceSpeed: null, G: null } },
       { id: "pr-4", name: "Adım 4 – Çark dış düzlem", partIds: ["p-saft", "p-gobek", "p-cark"], bearingIds: ["b-a", "b-b2"], planes: 2, pointIds: ["pt-g1", "pt-c2"], overrides: { serviceSpeed: null, balanceSpeed: 1500, G: null }, optional: true, note: "Yalnızca çark dış düzlemine erişim varsa uygulanır." },
     ];
-    s.ui = { tab: "processes", activeProcessId: "pr-3" };
+    s.ui = { defOpen: false, activeProcessId: "pr-3" };
     return s;
   }
 
@@ -82,7 +82,8 @@
       },
     }));
     if (raw.ui)
-      s.ui = { tab: raw.ui.tab === "processes" ? "processes" : "definition", activeProcessId: raw.ui.activeProcessId || null, detailsOpen: !!raw.ui.detailsOpen };
+      s.ui = { defOpen: raw.ui.defOpen ?? raw.ui.tab === "definition", activeProcessId: raw.ui.activeProcessId || null, detailsOpen: !!raw.ui.detailsOpen };
+    if (!raw.ui) s.ui.defOpen = !s.parts.length;
     if (!s.processes.some((p) => p.id === s.ui.activeProcessId)) s.ui.activeProcessId = s.processes[0]?.id || null;
     return s;
   }
@@ -178,7 +179,7 @@
           ${state.parts.map(renderPart).join("")}
         </div>
       </section>
-    </div>${gList}`;
+    </div>`;
   }
 
   function renderPart(p, i) {
@@ -208,21 +209,28 @@
 
   // ------------------------------------------------------------------ Prosesler
   function renderProcesses() {
+    const nOpt = state.processes.filter((p) => p.optional).length;
+    const head = `<div class="section-h">
+        <div><div class="eyebrow">Kademeli montaj</div><h2>Balans prosesleri</h2></div>
+        <span class="count">${state.processes.length} adım${nOpt ? ` · ${nOpt} opsiyonel` : ""}</span>
+        <span class="spacer"></span>
+        <button type="button" class="btn primary" data-action="add-proc">+ Proses ekle</button>
+      </div>`;
     if (!state.processes.length) {
-      return `<div class="card empty"><h2>Henüz balans prosesi yok</h2>
-        <p>Montaj adımlarını modelleyen kademeli prosesler tanımlayın.</p>
-        <button type="button" class="btn primary" data-action="add-proc">+ Proses ekle</button></div>`;
+      return `${head}<div class="card empty"><h3>Henüz balans prosesi yok</h3>
+        <p>Montaj adımlarını modelleyen kademeli prosesler tanımlayın. Önce yukarıdaki <b>Rotor tanımı</b> bölümünde parça ve yatakları girin.</p>
+        <button type="button" class="btn primary" data-action="add-proc">+ İlk prosesi ekle</button></div>`;
     }
     const R = results();
     const active = findProc(state.ui.activeProcessId) || state.processes[0];
     state.ui.activeProcessId = active.id;
-    return `<div class="proc-layout">
+    return `${head}<div class="proc-layout">
       <aside class="card proc-list">
-        <div class="card-h"><h2>Proses adımları</h2><button type="button" class="btn small" data-action="add-proc">+ Ekle</button></div>
+        <div class="card-h"><h2>Adımlar</h2><span class="hint">sırayla uygulanır</span></div>
         <ol data-live="proc-list">${renderProcList(R)}</ol>
       </aside>
       <section class="card ${active.optional ? "is-opt" : ""}">${renderProcCard(active, R.get(active.id))}</section>
-    </div>${gList}`;
+    </div>`;
   }
 
   function renderProcList(R) {
@@ -465,10 +473,48 @@ ABC: a = ${f(r.abc.a, 2)}, b = ${f(r.abc.b, 2)}, c = ${f(r.abc.c, 2)} mm</div>`;
   }
 
   // ------------------------------------------------------------------ çizim
+  /** Rotor tanımı: ana ekranın üstünde açılıp kapanan bölüm; kapalıyken özet bilgiler görünür. */
+  function renderDefPanel() {
+    const open = !!state.ui.defOpen;
+    const m = state.meta;
+    const title = (m.title || "").trim() || m.rotorId || "Yeni rotor";
+    return `<div class="panel-h">
+        <button type="button" class="panel-toggle" data-action="toggle-def" aria-expanded="${open}">
+          <span class="chev" aria-hidden="true">${open ? "▾" : "▸"}</span>
+          <span><span class="eyebrow">Rotor tanımı</span><span class="panel-title" data-live="def-title">${esc(title)}</span></span>
+        </button>
+        <div class="def-stats" data-live="def-stats">${defStats()}</div>
+        <button type="button" class="btn ${open ? "" : "dark"}" data-action="toggle-def">${open ? "Bölümü kapat" : "Düzenle"}</button>
+      </div>
+      ${open ? `<div class="panel-b">${renderDefinition()}
+        <div class="panel-f"><span class="hint">Değişiklikler anında proseslere yansır.</span><button type="button" class="btn dark" data-action="toggle-def">Tamam, bölümü kapat</button></div>
+      </div>` : ""}`;
+  }
+
+  function defStats() {
+    const mass = state.parts.reduce((a, p) => a + (C.num(p.mass) > 0 ? C.num(p.mass) : 0), 0);
+    const g = state.global;
+    const st = (k, v) => `<span class="stat"><span>${k}</span><b>${v}</b></span>`;
+    return [
+      st("Parça", state.parts.length),
+      st("Toplam kütle", `${C.fmt(mass, 1)} g`),
+      st("Yatak", state.bearings.length),
+      st("Servis hızı", `${C.fmt(C.num(g.serviceSpeed), 0)} rpm`),
+      st("Kalite", `G ${C.fmtAuto(C.num(g.G), 2)}`),
+    ].join("");
+  }
+
   function render() {
-    document.querySelectorAll(".tabs button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.tab === state.ui.tab)));
     const app = document.getElementById("app");
-    app.innerHTML = state.ui.tab === "definition" ? renderDefinition() : renderProcesses();
+    app.innerHTML = `<section id="def-root" class="panel def-panel ${state.ui.defOpen ? "open" : ""}">${renderDefPanel()}</section>
+      <section id="proc-root" class="proc-section">${renderProcesses()}</section>${gList}`;
+    save();
+  }
+
+  /** Yalnızca proses bölümünü yeniden çizer (rotor tanımında odak kaybolmasın diye). */
+  function renderProcRoot() {
+    const el = document.getElementById("proc-root");
+    if (el) el.innerHTML = renderProcesses();
     save();
   }
 
@@ -476,11 +522,12 @@ ABC: a = ${f(r.abc.a, 2)}, b = ${f(r.abc.b, 2)}, c = ${f(r.abc.c, 2)} mm</div>`;
   function refresh() {
     save();
     const app = document.getElementById("app");
-    if (state.ui.tab === "definition") {
-      const el = app.querySelector('[data-live="def-schematic"]');
-      if (el) el.innerHTML = S.toSVG(S.build(state, { h: 230 }));
-      return;
-    }
+    const defSch = app.querySelector('[data-live="def-schematic"]');
+    if (defSch) defSch.innerHTML = S.toSVG(S.build(state, { h: 230 }));
+    const stats = app.querySelector('[data-live="def-stats"]');
+    if (stats) stats.innerHTML = defStats();
+    const dt = app.querySelector('[data-live="def-title"]');
+    if (dt) dt.textContent = (state.meta.title || "").trim() || state.meta.rotorId || "Yeni rotor";
     const p = findProc(state.ui.activeProcessId);
     if (!p) return;
     const r = C.computeProcess(state, p);
@@ -533,6 +580,11 @@ ABC: a = ${f(r.abc.a, 2)}, b = ${f(r.abc.b, 2)}, c = ${f(r.abc.c, 2)} mm</div>`;
   function onChange(e) {
     const t = e.target;
     const d = t.dataset;
+    if (t.closest("#def-root")) {
+      // ad / konum değişiklikleri proses ayarlarındaki seçimlere yansısın
+      renderProcRoot();
+      return;
+    }
     if (!d.proc || !["part", "bearing", "point", "optional"].includes(d.k)) return;
     const p = findProc(d.proc);
     if (d.k === "optional") p.optional = t.checked;
@@ -570,19 +622,11 @@ ABC: a = ${f(r.abc.a, 2)}, b = ${f(r.abc.b, 2)}, c = ${f(r.abc.c, 2)} mm</div>`;
     };
     state.processes.push(p);
     state.ui.activeProcessId = p.id;
-    state.ui.tab = "processes";
   }
 
   function onClick(e) {
     const el = e.target.closest("[data-action]");
-    if (!el) {
-      const tab = e.target.closest("[data-tab]");
-      if (tab) {
-        state.ui.tab = tab.dataset.tab;
-        render();
-      }
-      return;
-    }
+    if (!el) return;
     const a = el.dataset.action;
     const p = findProc(state.ui.activeProcessId);
     switch (a) {
@@ -638,6 +682,9 @@ ABC: a = ${f(r.abc.a, 2)}, b = ${f(r.abc.b, 2)}, c = ${f(r.abc.c, 2)} mm</div>`;
       case "del-bearing":
         state.bearings = state.bearings.filter((x) => x.id !== el.dataset.id);
         for (const pr of state.processes) pr.bearingIds = pr.bearingIds.filter((x) => x !== el.dataset.id);
+        break;
+      case "toggle-def":
+        state.ui.defOpen = !state.ui.defOpen;
         break;
       case "add-proc":
         addProcess();
