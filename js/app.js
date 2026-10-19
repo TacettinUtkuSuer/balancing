@@ -288,7 +288,7 @@
     <div class="ref-note">Balans hızı (referans, toleransı etkilemez): ${C.fmt(pr.balanceSpeed, 0)} rpm · ${pr.sources.balanceSpeed === "process" ? "prosese özel" : "genel"}</div>`;
     const schem = `<div class="schem-box">${S.toSVG(S.build(state, { process: p, result: r, h: 260 }))}</div>`;
     const flags =
-      (p.optional ? `<div class="alert opt"><span class="opt-tag">OPSİYONEL ADIM</span> Bu adımın yapılması tercihe bağlıdır; raporda kesikli çerçeve ve "OPSİYONEL" işaretiyle ayrılır.</div>` : "") +
+      (p.optional ? `<div class="alert opt"><span class="opt-tag">OPSİYONEL ADIM</span> Bu adımın uygulanması isteğe bağlıdır; talimatnamede kesikli çerçeve ve "OPSİYONEL" işaretiyle ayrılır.</div>` : "") +
       (p.note && p.note.trim() ? `<div class="alert note"><b>Proses notu:</b> ${esc(p.note).replace(/\n/g, "<br>")}</div>` : "");
     const warn = flags + (r.warnings.length ? `<div class="alert warn">${r.warnings.map(esc).join("<br>")}</div>` : "");
     if (!r.valid) {
